@@ -1,0 +1,82 @@
+name: Build and Release Desktop Application
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version tag (e.g. v1.1.0)'
+        required: false
+        default: 'v1.1.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build ChoiceFinxTrader Windows Exe & Publish Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install ./kkunal-1.2.0.tar.gz
+          pip install -r backend/requirements.txt -r engine/requirements.txt -r client-desktop/requirements.txt
+          pip install pyinstaller pytest pytest-cov anyio
+
+      - name: Run Test Suite
+        run: |
+          python -m pytest
+
+      - name: Build Windows Executable
+        run: |
+          python client-desktop/build_exe.py
+
+      - name: Verify Compiled Executable
+        run: |
+          python client-desktop/verify_exe.py
+
+      - name: Compress Release Archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path client-desktop/dist/ChoiceFinxTrader.exe -DestinationPath client-desktop/dist/ChoiceFinxTrader-Windows.zip -Force
+
+      - name: Determine Release Tag
+        id: vars
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF -like "refs/tags/v*") {
+            $tag = $env:GITHUB_REF -replace "refs/tags/", ""
+          } elseif ("${{ github.event.inputs.version }}" -ne "") {
+            $tag = "${{ github.event.inputs.version }}"
+          } else {
+            $tag = "v1.1.0"
+          }
+          echo "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: Choice FINX Algo Trading Platform ${{ steps.vars.outputs.tag }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            client-desktop/dist/ChoiceFinxTrader.exe
+            client-desktop/dist/ChoiceFinxTrader-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

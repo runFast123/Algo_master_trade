@@ -1,0 +1,8 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+sqlalchemy>=2.0,<3.0
+pydantic>=2.7,<3.0
+
+# Only needed for a serverless or hosted-Postgres deployment. A VPS running
+# SQLite does not need this.
+psycopg[binary]>=3.1,<4.0

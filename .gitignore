@@ -1,0 +1,49 @@
+# Secrets - never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Databases and user data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Build artefacts
+build/
+dist/
+*.spec.bak
+
+# Logs
+*.log
+
+# Editors / OS
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+
+# Desktop UI staging directory - generated from frontend-user/ by build_exe.py
+client-desktop/static/
+client-desktop/version_info.txt
+client-desktop/*.spec
+
+# MCP server config - contains an API key
+.mcp.json
+
+# Generated at build time by client-desktop/build_exe.py
+client-desktop/app/_build.py
+licence-server/licences.db

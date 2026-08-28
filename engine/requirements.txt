@@ -1,0 +1,14 @@
+# Trading engine. Imported in process by the backend, not run as a service —
+# hence no web framework here. WebSocket transport lives inside the SDK.
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3,<3.0
+pandas>=2.2,<4.0
+numpy>=1.26,<3.0
+requests>=2.31,<3.0
+
+# The Choice broker SDK. Install from the bundled archive:
+#   pip install ./kkunal-1.2.0.tar.gz
+kkunal>=1.2.0
+
+# Dev / test
+pytest>=8.0,<10.0

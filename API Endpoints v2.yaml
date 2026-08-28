@@ -1,0 +1,5728 @@
+openapi: 3.0.0
+info:
+  title: Marketstack
+  description: >-
+    The marketstack API was built to deliver worldwide stock market data
+    (real-time, intraday and historical), together with information on stock
+    exchanges, tickers, indices, ETFs, bonds, commodities and company
+    fundamentals, in a simple, lightweight JSON format. Requests to the REST API
+    are made using a straightforward HTTP GET URL structure. This documentation
+    covers the v2 API surface.
+  version: 2.0.0
+servers:
+  - url: https://api.marketstack.com
+    description: Production server
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: API Endpoints
+    description: API Endpoints
+paths:
+  /v2/exchanges:
+    get:
+      tags:
+        - API Endpoints
+      summary: Stock Exchanges
+      description: >-
+        Using the Exchanges endpoint you will be able to look up information any
+        of the 2700+ stock exchanges supported by this endpoint. This endpoint
+        provides general information about several stock exchanges. Not all
+        stock exchanges found here are supported by other Marketstack endpoints.
+        For the supported stock exchanges supported by each endpoint, please
+        verify each endpoint documentation.
+      operationId: get_stock_exchange_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: >-
+            Use this parameter to get autocomplete suggestions by specifying a
+            search term.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Stock Exchange by MIC
+      description: Returns detailed information for a single exchange (by MIC).
+      operationId: get_stock_exchange_show_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/eod:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange End-of-Day Data
+      description: Returns EOD data for all symbols on a specific exchange.
+      operationId: get_stock_exchange_eod_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangesMicEod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/eod/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange Latest End-of-Day Data
+      description: >-
+        Returns EOD data for the latest date avialbale for all symbols on a
+        specific exchange.
+      operationId: get_stock_exchange_eod_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangesMicEod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/eod/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange End-of-Day Data for a Date
+      description: >-
+        Returns EOD data for the given date for all symbols on a specific
+        exchange.
+      operationId: get_stock_exchange_eod_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: path
+          description: Date for which to return end-of-day data (YYYY-MM-DD).
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangesMicEod'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/intraday:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange Intraday Data
+      description: Returns intraday data for all symbols on a specific exchange.
+      operationId: get_stock_exchange_intraday_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/intraday/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange Latest Intraday Data
+      description: >-
+        Returns intraday data for the latest date avialbale for all symbols on a
+        specific exchange.
+      operationId: get_stock_exchange_intraday_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/intraday/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Exchange Intraday Data for a Date
+      description: >-
+        Returns intraday data for the given date for all symbols on a specific
+        exchange.
+      operationId: get_stock_exchange_intraday_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: path
+          description: Date for which to return intraday data (YYYY-MM-DD).
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/exchanges/{mic}/tickers:
+    get:
+      tags:
+        - API Endpoints
+      summary: Tickers for an Exchange
+      description: Returns tickers listed on a specific exchange.
+      operationId: get_stock_exchange_tickers_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: mic
+          in: path
+          description: Market Identifier Code (MIC) of the stock exchange.
+          required: true
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: >-
+            Use this parameter to get autocomplete suggestions by specifying a
+            search term.
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExchangeMicTickersResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker by Symbol
+      description: >-
+        Using the API's Tickers endpoint you will be able to look up information
+        about one or multiple stock ticker symbols as well as obtain end-of-day,
+        real-time and intraday market data for single tickers.
+      operationId: get_ticker_show_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/eod:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker End-of-Day Data
+      description: >-
+        Obtain end-of-day data for a specific stock ticker by attaching `/eod`
+        to your URL.
+      operationId: get_ticker_eod_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerEodResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/eod/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Latest End-of-Day Data
+      description: >-
+        Obtain eod data for the latest date by specifying stock ticker by
+        attaching `/eod/latest` to your URL.
+      operationId: get_ticker_eod_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EODBar'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/eod/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker End-of-Day Data for a Date
+      description: >-
+        Specify a date in `YYYY-MM-DD` format. You can also specify an exact
+        time in ISO-8601 date format. For example, `2020-05-21T00:00:00+0000`.
+        Example, `/eod/2020-01-01`.
+      operationId: get_ticker_eod_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: path
+          description: Date in YYYY-MM-DD format.
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EODBar'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/intraday:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Intraday Data
+      description: >-
+        Obtain real-time & intraday data for a specific stock ticker by
+        attaching `/intraday` to your URL
+      operationId: get_ticker_intraday_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerIntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/intraday/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Latest Intraday Data
+      description: >-
+        Obtain intraday data for the latest date by specifying stock ticker by
+        attaching `/intraday/latest` to your URL.
+      operationId: get_ticker_intraday_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerIntradayLatestResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/intraday/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Intraday Data for a Date
+      description: Ticker Intraday Data for a Date
+      operationId: get_ticker_intraday_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: date
+          in: path
+          description: Date in YYYY-MM-DD format.
+          required: true
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/splits:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Stock Splits
+      description: >-
+        Obtain ticker splits factor for a specific stock ticker by attaching
+        `/splits` to your URL.
+      operationId: get_ticker_splits_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerSplitsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickers/{symbol}/dividends:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Stock Dividends
+      description: >-
+        Obtain ticker dividend data for a specific stock ticker by attaching
+        `/dividends` to your URL.
+      operationId: get_ticker_dividends_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbol
+          in: path
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerDividendsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/eod:
+    get:
+      tags:
+        - API Endpoints
+      summary: End-of-Day Data
+      description: >-
+        You can use the API's `eod` endpoint in order to obtain end-of-day data
+        for one or multiple stock tickers. A single or multiple comma-separated
+        ticker symbols are passed to the API using the `symbols` parameter.
+             * 
+             * 
+             * **Note:**
+             * 
+             * * *The EOD data has access to over 500,000 tickers from more major world-known exchanges. The full list of supported tickers and exchanges can be seen here:* [**Download**](https://marketstack.com/download/v2_eod_tickers_finnworlds_tiingo.xlsx)
+             * 
+             * * *A daily updated list of all tickers accessible via Marketstack is available for download:* [**Download Ticker List**](https://marketstack.com/download/supported_tickers_2.csv)
+             * 
+             * * *The V2 EOD endpoint supports data from **30+ stock exchanges**, including **NASDAQ,** **PINK, SHG, NYSE, NYSE ARCA, OTCQB,** and **BATS***
+             * 
+             * * *To retrieve end-of-day data for individual tickers, you can also use the Tickers Endpoint.*
+             * 
+             * * ***Ticker Symbol Formatting:** When querying ticker symbols that include a period (.), replace the period with a hyphen (-) in the intraday endpoint. **Example:BRK.B → BRK-B***
+             * * *The **LSE’s/XLON** official currency is **GBP**, however many stocks can be and are quoted in **pence (GBX)** by convention. It improves readability and pricing precision. If **LSE** equity price looks “too big” → it’s probably **pence**. Convert using **GBP = GBX / 100***
+             * 
+             * **Adjusted Prices:**
+             * “**Adjusted**” prices represent stock values that have been modified to accurately reflect the impact of corporate actions such as splits and dividends. These adjustments are applied following the CRSP Calculations methodology established by the **Center for Research in Security Prices (CRSP).**
+      operationId: get_eod_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EODResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/eod/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Latest End-of-Day Data
+      description: Returns the most recent end-of-day data point for the requested symbols.
+      operationId: get_eod_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EODResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/eod/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: End-of-Day Data for a Specific Date
+      description: >-
+        Specify a date in `YYYY-MM-DD` format. You can also specify an exact
+        time in ISO-8601 date format. For example, `2020-05-21T00:00:00+0000`.
+        Example, `/eod/2020-01-01`
+      operationId: get_eod_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: date
+          in: path
+          description: Date in YYYY-MM-DD format.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EODResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/intraday:
+    get:
+      tags:
+        - API Endpoints
+      summary: Intraday Data
+      description: >-
+        In additional to daily end-of-day stock prices, the Marketstack API also
+        supports intraday data with data intervals as short as one minute.
+        Intraday prices are available for all US stock tickers included in the
+        IEX (Investors Exchange) stock exchange.
+             * 
+             * To access intraday market data, use the API’s Intraday Endpoint and specify your desired stock ticker symbols.
+             * 
+             * **Notes:**
+             * 
+             * * *A daily updated list of all tickers accessible via Marketstack is available for download:[**Download Ticker List**](https://marketstack.com/download/supported_tickers_2.csv)*
+             * 
+             * * *You can also request intraday data for **individual ticker symbols** using the **Tickers Endpoint.***
+             * 
+             * * ***Ticker Symbol Formatting:** When querying ticker symbols that include a period (.), replace the period with a hyphen (-) when using the Intraday Endpoint. **Example:** BRK.B → BRK-B*
+             * 
+             * **IMPORTANT NOTE:** In the case of Intraday, Marketstack provides derived data that calculates a real-time reference price for each asset. While this is not a substitute for the TOPS Feed, we believe it will fulfill the needs of 95% of our customer base.
+             * 
+             * We’re doing so because as of **February 1st, 2025**, the IEX Exchange has changed its market data policies. To receive the FULL TOPS Feed, you must now have a market data agreement signed with the IEX Exchange. This means that the parameters bidPrice, bidSize, askPrice, askSize, lastPrice, lastSize, mid, and last will all return NULL in the API response for intraday since **IEX entitlement is required** for them. If you still need to have access to TOPS Feed, please contact our customer support team before signing any contract with them.
+             * 
+             * For using our derived data, there is no need to have a market data agreement signed with the IEX exchange, and there is no additional cost to the IEX Exchange.`
+      operationId: get_intraday_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/intraday/latest:
+    get:
+      tags:
+        - API Endpoints
+      summary: Latest Intraday Data
+      description: |-
+        Returns the most recent intraday bar for the requested symbols.
+             * 
+             * **Real-Time Updates:** Please note that data frequency intervals below 15 minutes (15min) are only supported if you are subscribed to the Professional Plan or higher.
+             * 
+             * US equity markets close at **4:00 PM EST**, with trades at or after this time considered after-hours (retrievable with `after_hours=true`), though IEX after-hours data may be sparse, and note that intraday closing prices differ from official EOD closes, which are set via an auction process [Investopedia](https://www.investopedia.com/articles/investing/091113/auction-method-how-nyse-stock-prices-are-set.asp)
+      operationId: get_intraday_latest_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/intraday/{date}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Intraday Data for a Specific Date
+      description: >-
+        Specify a date in `YYYY-MM-DD` format. You can also specify an exact
+        time in ISO-8601 date format. For example, `2020-05-21T00:00:00+0000`.
+        Example, `/intraday/2020-01-01`
+      operationId: get_intraday_date_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols (required
+            for this endpoint). Example: AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: interval
+          in: query
+          description: >-
+            Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+            30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+          required: false
+          schema:
+            type: string
+            default: 1hour
+            enum:
+              - 1min
+              - 5min
+              - 10min
+              - 15min
+              - 30min
+              - 1hour
+              - 3hour
+              - 6hour
+              - 12hour
+              - 24hour
+        - name: after_hours
+          in: query
+          description: Include after-hours data in intraday results.
+          required: false
+          schema:
+            type: boolean
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: date
+          in: path
+          description: Date in YYYY-MM-DD format.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntradayResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: >-
+            Validation error — symbols is required and all parameters must be
+            valid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/timezones:
+    get:
+      tags:
+        - API Endpoints
+      summary: Supported Timezones
+      description: Returns a paginated list of supported timezones by Marketstack API.
+      operationId: get_timezones_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimezonesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/currencies:
+    get:
+      tags:
+        - API Endpoints
+      summary: Supported Currencies
+      description: Returns a paginated list of supported currencies by Marketstack API.
+      operationId: get_currencies_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrenciesResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/splits:
+    get:
+      tags:
+        - API Endpoints
+      summary: Stock Splits
+      description: >-
+        Using the Splits Data endpoint, you will be able to look up information
+        about the stock splits factor for different symbols.
+             * 
+             * 
+             * **Note:** The V2 Splits Endpoint provides split data for symbols listed on **NASDAQ, PINK, SHG, NYSE, NYSE ARCA, OTCQB,** and **BATS**. You can also retrieve split information for individual ticker symbols using the Tickers Endpoint.
+      operationId: get_splits_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols. Example:
+            AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/dividends:
+    get:
+      tags:
+        - API Endpoints
+      summary: Stock Dividends
+      description: >-
+        Using the Dividends Data endpoint, you will be able to look up
+        information about the stock dividend for different symbols.
+             * 
+             * **Note:** The **V2 Dividend Endpoint** provides dividend data for symbols listed on **NASDAQ, PINK, SHG, NYSE, NYSE ARCA, OTCQB,** and **BATS**, and dividend information for individual ticker symbols can also be retrieved using the **Tickers Endpoint**.
+      operationId: get_dividends_v2
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: symbols
+          in: query
+          description: >-
+            Comma-separated list of one or more stock ticker symbols. Example:
+            AAPL,MSFT
+          required: true
+          schema:
+            type: string
+        - name: sort
+          in: query
+          description: Sort order of the results by date.
+          required: false
+          schema:
+            type: string
+            default: DESC
+            enum:
+              - DESC
+              - ASC
+              - desc
+              - asc
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DividendsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickerslist:
+    get:
+      tags:
+        - API Endpoints
+      summary: List Tickers
+      description: >-
+        Using the `tickerslist` endpoint you will be able to get the full list
+        of supported tickers.
+      operationId: get_tickerslist
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: search
+          in: query
+          description: >-
+            Use this parameter to get autocomplete suggestions by specifying a
+            search term.
+          required: false
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: >-
+            Filter results by stock exchange, identified by its MIC. Example:
+            XNAS
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickersListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/tickerinfo:
+    get:
+      tags:
+        - API Endpoints
+      summary: Ticker Information
+      description: >-
+        Using the `tickerinfo` endpoint you will be able to get the full
+        information about a ticker.
+      operationId: get_tickerinfo
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: ticker
+          in: query
+          description: 'Stock ticker symbol. Example: AAPL'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickerInfoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/companyratings:
+    get:
+      tags:
+        - API Endpoints
+      summary: Company Analyst Ratings
+      description: >-
+        The Company Rating Endpoint delivers real-time buy/sell/hold analyst
+        ratings, updated as new reports are published. It also provides 15+
+        years of historical ratings and price targets to track trends and
+        analyst performance over time.
+             * 
+             * 
+             * **Note:** Rate limit is enforced to 1 API call per minute.
+      operationId: get_company_ratings
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: ticker
+          in: query
+          description: 'Stock ticker symbol. Example: AAPL'
+          required: true
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: rated
+          in: query
+          description: Filter response on buy, sell, or hold.
+          required: false
+          schema:
+            type: string
+            enum:
+              - buy
+              - sell
+              - hold
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyRatingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/indexlist:
+    get:
+      tags:
+        - API Endpoints
+      summary: List Market Indices
+      description: >-
+        The Stock Market Index Listing endpoint delivers instantly real-time and
+        historical stock market index data. Also, returns the full list of
+        supported benchmarks/indexes.
+      operationId: get_indexlist
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/indexinfo:
+    get:
+      tags:
+        - API Endpoints
+      summary: Market Index Information
+      description: >-
+        The Stock Market Index Info endpoint delivers stock market index
+        information and returns the details for the requested index.
+      operationId: get_indexinfo
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: index
+          in: query
+          description: Market index identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IndexInfoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/bondlist:
+    get:
+      tags:
+        - API Endpoints
+      summary: List Bonds
+      description: >-
+        The Bonds Listing endpoint delivers the list of the supported countries
+        data. Return the full list of supported countries.
+      operationId: get_bond_list
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: country
+          in: query
+          description: Filter bonds by country.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BondListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/bond:
+    get:
+      tags:
+        - API Endpoints
+      summary: Bond Information
+      description: >-
+        The Bond endpoint delivers immediately real-time government bond data.
+        The bond data focuses on treasury notes issued in leading countries
+        worldwide for ten years. The Bond API delivers info for every country.
+        Endpoint returns the details for the desired country.
+      operationId: get_bond
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: country
+          in: query
+          description: Filter bonds by country.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BondInfoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/etflist:
+    get:
+      tags:
+        - API Endpoints
+      summary: List ETFs
+      description: >-
+        The ETF Holdings Listing endpoint delivers instantly complete set of
+        exchange-traded funds data based on the unique identifier code of an ETF
+        data. The endpoint returns a full list of supported ETF tickers.
+             * 
+             * 
+             * The example API request below demonstrates how to retrieve **ETF holdings data.**
+             * 
+             * **Note:** The ETF API endpoints apply a **call count multiplier of 20.**
+      operationId: get_etf_list
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: ticker
+          in: query
+          description: ETF ticker symbol.
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Filter by ETF status.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ETFListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/etfholdings:
+    get:
+      tags:
+        - API Endpoints
+      summary: ETF Holdings
+      description: >-
+        ETF Holding Info (timeframe) holding data within a specified date range
+        using a unique ticker identifier. You can adjust the `ticker`,
+        `date_from`, and `date_to` parameters based on your specific needs.
+             * 
+             * The example API request below demonstrates how to retrieve **stock market index information.**
+             * 
+             * **Note:**The ETF API endpoints use a **call count multiplier of 20.**
+      operationId: get_etfholdings
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: ticker
+          in: query
+          description: ETF ticker symbol.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ETFHoldingsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/stockprice:
+    get:
+      tags:
+        - API Endpoints
+      summary: Real-Time Stock Price
+      description: >-
+        Real-time Stock Market Prices endpoint delivers instant access to live
+        market data for stocks across major exchanges worldwide. Track intraday
+        stock performance on `NYSE`, `NASDAQ`, `LON`, `WSE`, `EPA`, `SHE`,
+        `NSE`, and much more.
+      operationId: get_stockprice
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: ticker
+          in: query
+          description: Stock ticker symbol.
+          required: true
+          schema:
+            type: string
+        - name: exchange
+          in: query
+          description: Stock exchange MIC.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockPriceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/commodities:
+    get:
+      tags:
+        - API Endpoints
+      summary: Commodity Prices
+      description: >-
+        Get commodity prices of 70+ world-known commodities of energy, metals,
+        industrial, agricultural, and livestock areas.
+             * 
+             * **Note:**
+             * 
+             * * Rate limit for 1 API call per minute is enforced on this endpoint. See the full list of available commodities in the file presented here:[**Download**](https://marketstack.com/download/marketstack-commodities.xlsx)
+             * 
+             * * Historical end-of-day data (`eod`) is available for up to 15 years back, while intraday data (`intraday`) always only offers the last 10,000 entries for each of the intervals available. **Example:** For a 1-minute interval, historical intraday data is available for up to 10,000 minutes back.
+      operationId: get_commodities
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: commodity_name
+          in: query
+          description: >-
+            Name of the commodity for which to retrieve the price. Example:
+            aluminum
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommodityResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/commoditieshistory:
+    get:
+      tags:
+        - API Endpoints
+      summary: Commodity Price History
+      description: >-
+        If you are looking for past commodity prices, you can use the Historical
+        Commodity Prices endpoint, where you can choose specific dates and
+        search by individual commodities. Additionally, the API offers options
+        for daily data from the previous five years or monthly intervals using
+        the `frequency` parameter.
+             * 
+             * **Note:**
+             * 
+             * * A rate limit of 1 API call per minute is enforced on this endpoint.
+             * 
+             * * The recommended historical date range for a single API call is 1 year when requesting daily data. While larger ranges (up to 1.5 years) may work, retrieving data one year at a time ensures consistency.
+             * 
+             * * Historical data for Commodities is available for up to 15 years in the past, though coverage varies by commodity type like **Metals:** Typically over 13 years of historical data, with some having as few as 2 years. **Energy:** Generally 15 years of coverage, though a few have up to 10 years. **Industrial:** Usually 15 years, with some limited to 10 years. **Livestock and Agricultural:** Coverage ranges from 9 to 15 years.
+      operationId: get_commodities_history
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: date_from
+          in: query
+          description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: commodity_name
+          in: query
+          description: Name of the commodity.
+          required: true
+          schema:
+            type: string
+        - name: frequency
+          in: query
+          description: >-
+            Data frequency. Accepted values include: day, daily, weekly,
+            monthly, quarterly, yearly. Defaults to day.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommodityHistoricalResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/company_name:
+    get:
+      tags:
+        - API Endpoints
+      summary: Search Company by Name
+      description: >-
+        Find Company Name by CIK code, which will provide a company name with a
+        search by the CIK Code. The CIK code must be entered with all 10 digits,
+        including leading zeros if any. Since the CIK code is a unique code for
+        every company, we also have CIK code validation, meaning if the CIK code
+        is not entered in the correct format with all of the digits, we return
+        an error for invalid CIK format. This API endpoint returns data only in
+        case we have an exact match in the CIK code.
+      operationId: get_company_name
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: cik_code
+          in: query
+          description: >-
+            SEC Central Index Key (CIK) code. Must be the exact 10-digit CIK
+            including leading zeros.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyNameByCIKResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/cik_code:
+    get:
+      tags:
+        - API Endpoints
+      summary: Company by CIK Code
+      description: >-
+        Endpoint provides CIK code information with a search by company name or
+        part of the company name. For example, if you search for “APP” in the
+        response, the endpoint will provide information on the CIK code for all
+        of the companies that we have in the database that have “APP” (“app”) in
+        their name. If you enter “Example LLC”, then the API will give a
+        response with all companies having “Example LLC” in the name, Example
+        LLC Florida, Example LLC., Example LLC International, etc.
+      operationId: get_cik_code
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: company_name
+          in: query
+          description: Company name (minimum 3 letters) used to search for the CIK code.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CIKSearchResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/company_facts:
+    get:
+      tags:
+        - API Endpoints
+      summary: Company Facts
+      description: Returns all the company concepts data for a specific CIK.
+      operationId: get_company_facts
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: cik_code
+          in: query
+          description: SEC Central Index Key (CIK) code.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyFactsByCIKResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/concept/accounts_payable:
+    get:
+      tags:
+        - API Endpoints
+      summary: Accounts Payable Concept
+      description: >-
+        This API endpoint returns all the disclosures from a single company
+        (CIK) and concept (a taxonomy and tag) into a single JSON file, with a
+        separate array of facts for each units on measure that the company has
+        chosen to disclose (e.g. net profits reported in U.S. dollars and in
+        Canadian dollars).
+      operationId: get_accounts_payable
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: cik_code
+          in: query
+          description: SEC Central Index Key (CIK) code.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountsPayableResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/submissions:
+    get:
+      tags:
+        - API Endpoints
+      summary: SEC Submissions
+      description: >-
+        Returns submission details for a specific CIK. Pass atleast one
+        parameter `cik_code_name` or  `cik_code`
+      operationId: get_submissions
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: cik_code
+          in: query
+          description: SEC CIK code.
+          required: false
+          schema:
+            type: string
+        - name: accession_number
+          in: query
+          description: Filing accession number.
+          required: false
+          schema:
+            type: string
+        - name: cik_code_name
+          in: query
+          description: Company name.
+          required: false
+          schema:
+            type: string
+        - name: filing_from
+          in: query
+          description: Filing date from (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+        - name: filing_to
+          in: query
+          description: Filing date to (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+        - name: report_from
+          in: query
+          description: Report date from (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+        - name: report_to
+          in: query
+          description: Report date to (YYYY-MM-DD).
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionsByCIKResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+  /v2/frames/accounts_payable/{unit}:
+    get:
+      tags:
+        - API Endpoints
+      summary: Accounts Payable Frames
+      description: >-
+        The frames API aggregates one fact for each reporting entity that is the
+        last filed that most closely fits the calendrical period requested. This
+        API supports annual, quarterly, and instantaneous data. This API
+        endpoint is made for the US-GAAP taxonomy and the Accounts Payable
+        Current type of the taxonomy.           
+             * Where the units of measure specified in the API contain a numerator and a denominator, these are separated by “-per-” such as “USD-per-shares”. Note that the default unit in XBRL is “pure”.           
+             * The period format is CY#### for annual data (duration 365 days +/- 30 days), CY####Q# for quarterly data (duration 91 days +/- 30 days), and CY####Q#I for instantaneous data. Because company financial calendars can start and end on any month or day and even change in length from quarter to quarter according to the day of the week, the frame data is assembled by the dates that best align with a calendar quarter or year. Data users should be mindful of the different reporting start and end dates for facts contained in a frame.
+      operationId: get_frames_accounts_payable
+      parameters:
+        - name: access_key
+          in: query
+          description: Your API access key, which can be found in your account dashboard.
+          required: true
+          schema:
+            type: string
+        - name: unit
+          in: path
+          description: Unit of measure for the frame.
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Specify a limit of results to return. Default value is 100.
+          required: false
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            default: 100
+        - name: offset
+          in: query
+          description: Specify an offset for pagination. Default offset value is 0.
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            default: 0
+        - name: frame
+          in: query
+          description: 'Reporting frame. Example: CY2023Q1I.'
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          description: Validation error — one or more parameters are invalid.
+        '429':
+          $ref: '#/components/responses/RateLimitReached'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/Maintenance'
+components:
+  schemas:
+    ApiError:
+      required:
+        - error
+        - success
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          $ref: '#/components/schemas/ApiError_error'
+      description: Standard apilayer error envelope, shared by every error response.
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        count:
+          type: integer
+        total:
+          type: integer
+    PaginatedResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            type: object
+    EODBar:
+      type: object
+      properties:
+        open:
+          type: number
+          format: float
+        high:
+          type: number
+          format: float
+        low:
+          type: number
+          format: float
+        close:
+          type: number
+          format: float
+        volume:
+          type: number
+          format: float
+        adj_open:
+          type: number
+          format: float
+        adj_high:
+          type: number
+          format: float
+        adj_low:
+          type: number
+          format: float
+        adj_close:
+          type: number
+          format: float
+        adj_volume:
+          type: number
+          format: float
+        split_factor:
+          type: number
+          format: float
+        dividend:
+          type: number
+          format: float
+        name:
+          type: string
+        exchange_code:
+          type: string
+        asset_type:
+          type: string
+        price_currency:
+          type: string
+        symbol:
+          type: string
+        exchange:
+          type: string
+        date:
+          type: string
+          description: Timestamp in ISO 8601 format.
+    IntradayBar:
+      type: object
+      properties:
+        open:
+          type: number
+          format: float
+        high:
+          type: number
+          format: float
+        low:
+          type: number
+          format: float
+        mid:
+          type: number
+          format: float
+        last_size:
+          type: integer
+        bid_size:
+          type: number
+          format: float
+        bid_price:
+          type: number
+          format: float
+        ask_price:
+          type: number
+          format: float
+        ask_size:
+          type: number
+          format: float
+        last:
+          type: number
+          format: float
+        close:
+          type: number
+          format: float
+        volume:
+          type: number
+          format: float
+        marketstack_last:
+          type: number
+          format: float
+        symbol:
+          type: string
+        exchange:
+          type: string
+        date:
+          type: string
+          description: Timestamp in ISO 8601 format.
+    SplitItem:
+      type: object
+      properties:
+        split_factor:
+          type: number
+          format: float
+        stock_split:
+          type: string
+        date:
+          type: string
+        symbol:
+          type: string
+    DividendItem:
+      type: object
+      properties:
+        dividend:
+          type: number
+          format: float
+        payment_date:
+          type: string
+        record_date:
+          type: string
+        declaration_date:
+          type: string
+        distr_freq:
+          type: string
+        date:
+          type: string
+        symbol:
+          type: string
+    EODResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EODBar'
+    IntradayResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntradayBar'
+    SplitsResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SplitItem'
+    DividendsResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DividendItem'
+    StockPriceItem:
+      type: object
+      properties:
+        exchange_code:
+          type: string
+          description: Exchange code.
+        exchange_name:
+          type: string
+          description: Exchange name.
+        country:
+          type: string
+          description: Exchange country.
+        ticker:
+          type: string
+          description: Ticker symbol.
+        price:
+          type: string
+          description: Last known price.
+        currency:
+          type: string
+          description: Trading currency.
+        trade_last:
+          type: string
+          description: Timestamp of the last known trade.
+    StockPriceResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockPriceItem'
+    CommodityResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommodityResponse_data'
+    CommodityHistoricalResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/CommodityHistoricalResponse_result'
+    CompanyRatingsResponse:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/CompanyRatingsResponse_status'
+        result:
+          $ref: '#/components/schemas/CompanyRatingsResponse_result'
+    TickerExchange:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the stock exchange.
+        acronym:
+          type: string
+          description: Acronym of the stock exchange.
+        mic:
+          type: string
+          description: MIC identification of the exchange.
+        country:
+          type: string
+          description: Country of the stock exchange.
+          nullable: true
+        country_code:
+          type: string
+          description: Three-letter country code of the exchange.
+        city:
+          type: string
+          description: City where the exchange is located.
+        website:
+          type: string
+          description: Website URL of the exchange.
+        operating_mic:
+          type: string
+          description: Operating Market Identifier Code.
+        oprt_sgmt:
+          type: string
+          description: Indicates operating MIC vs market segment MIC.
+        legal_entity_name:
+          type: string
+          description: Legal entity name.
+        exchange_lei:
+          type: string
+          description: Exchange Legal Entity Identifier (LEI).
+        market_category_code:
+          type: string
+          description: Market category code.
+        exchange_status:
+          type: string
+          description: Current status of the exchange.
+        date_creation:
+          $ref: '#/components/schemas/ExchangeDateTime'
+        date_last_update:
+          $ref: '#/components/schemas/ExchangeDateTime'
+        date_last_validation:
+          $ref: '#/components/schemas/ExchangeDateTime'
+        date_expiry:
+          $ref: '#/components/schemas/TickerExchange_date_expiry'
+        comments:
+          type: string
+          description: Additional comments.
+      description: >-
+        Stock exchange as embedded in ticker responses. Note: date fields
+        serialize as objects here, unlike the /exchanges endpoints which return
+        date strings.
+    Ticker:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        symbol:
+          type: string
+          description: Ticker symbol.
+        has_intraday:
+          type: boolean
+          description: Indicates if intraday data is available.
+        has_eod:
+          type: boolean
+          description: Indicates if end-of-day data is available.
+        country:
+          type: string
+          description: Country of the ticker.
+          nullable: true
+        stock_exchanges:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerExchange'
+    TickerResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        symbol:
+          type: string
+          description: Ticker symbol.
+        cik:
+          type: string
+          description: SEC Central Index Key.
+        isin:
+          type: string
+          description: International Securities Identification Number.
+        cusip:
+          type: string
+          description: U.S./Canada security identifier (CUSIP).
+        ein_employer_id:
+          type: string
+          description: Employer Identification Number.
+        lei:
+          type: string
+          description: Legal Entity Identifier.
+        series_id:
+          type: string
+          description: Series ID.
+        item_type:
+          type: string
+          description: Type of item (e.g., equity).
+        sector:
+          type: string
+          description: Sector of the company.
+        industry:
+          type: string
+          description: Industry of the company.
+        sic_code:
+          type: string
+          description: Standard Industrial Classification code.
+        sic_name:
+          type: string
+          description: SIC description.
+        stock_exchange:
+          $ref: '#/components/schemas/TickerExchange'
+    TickerEodResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          $ref: '#/components/schemas/TickerEodResponse_data'
+    TickerSplitsResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerSplitsResponse_data'
+    TickerDividendsResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerDividendsResponse_data'
+    TickerIntradayResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          $ref: '#/components/schemas/TickerIntradayResponse_data'
+    TickerIntradayLatestResponse:
+      $ref: '#/components/schemas/IntradayBar'
+    TickersListResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickersListResponse_data'
+    TickerInfoResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/TickerInfoResponse_data'
+    Exchange:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the stock exchange.
+        acronym:
+          type: string
+          description: Acronym of the stock exchange.
+        mic:
+          type: string
+          description: MIC identification of the exchange.
+        country:
+          type: string
+          description: Country of the stock exchange.
+          nullable: true
+        country_code:
+          type: string
+          description: Three-letter country code of the exchange.
+        city:
+          type: string
+          description: City where the exchange is located.
+        website:
+          type: string
+          description: Website URL of the exchange.
+        operating_mic:
+          type: string
+          description: Operating Market Identifier Code.
+        oprt_sgmt:
+          type: string
+          description: Indicates operating MIC vs market segment MIC.
+        legal_entity_name:
+          type: string
+          description: Legal entity name.
+        exchange_lei:
+          type: string
+          description: Exchange Legal Entity Identifier (LEI).
+        market_category_code:
+          type: string
+          description: Market category code.
+        exchange_status:
+          type: string
+          description: Current status of the exchange.
+        date_creation:
+          type: string
+          description: Creation date.
+        date_last_update:
+          type: string
+          description: Last update date.
+        date_last_validation:
+          type: string
+          description: Last validation date.
+        date_expiry:
+          type: string
+          description: Expiry date.
+        comments:
+          type: string
+          description: Additional comments.
+    ExchangeDateTime:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date/time string (e.g. 2005-06-27 00:00:00.000000).
+        timezone_type:
+          type: integer
+        timezone:
+          type: string
+      description: >-
+        Date value serialized as an object (PHP DateTime) in ticker-embedded
+        exchanges.
+    ExchangesResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Exchange'
+    ExchangeMicTickersResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Exchange'
+            - type: object
+              properties:
+                tickers:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: Company or instrument name.
+                      symbol:
+                        type: string
+                        description: Ticker symbol.
+                      has_intraday:
+                        type: boolean
+                        description: Indicates if intraday data is available.
+                      has_eod:
+                        type: boolean
+                        description: Indicates if end-of-day data is available.
+    ExchangesMicEod:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          allOf:
+            - $ref: '#/components/schemas/Exchange'
+            - type: object
+              properties:
+                eod:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EODBar'
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Three-letter currency code.
+        name:
+          type: string
+          description: Currency name.
+        symbol:
+          type: string
+          description: Currency symbol.
+        symbol_native:
+          type: string
+          description: Native currency symbol.
+    CurrenciesResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Currency'
+    Timezone:
+      type: object
+      properties:
+        timezone:
+          type: string
+          description: IANA timezone name.
+        abbr:
+          type: string
+          description: Standard time abbreviation.
+        abbr_dst:
+          type: string
+          description: Daylight saving time abbreviation.
+    TimezonesResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Timezone'
+    IndexListItem:
+      type: object
+      properties:
+        benchmark:
+          type: string
+          description: Benchmark code of the market index.
+    IndexListResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndexListItem'
+    IndexInfoItem:
+      type: object
+      properties:
+        benchmark:
+          type: string
+          description: Benchmark name of the market index.
+        region:
+          type: string
+          description: Region of the index.
+        country:
+          type: string
+          description: Country of the index.
+        price:
+          type: string
+          description: Current index price.
+        price_change_day:
+          type: string
+          description: Absolute day change.
+        percentage_day:
+          type: string
+          description: Day change in percent.
+        percentage_week:
+          type: string
+          description: Week change in percent.
+        percentage_month:
+          type: string
+          description: Month change in percent.
+        percentage_year:
+          type: string
+          description: Year change in percent.
+        date:
+          type: string
+          description: Date of the quote.
+    IndexInfoResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/IndexInfoItem'
+    BondListItem:
+      type: object
+      properties:
+        country:
+          type: string
+          description: Country supported for bonds.
+    BondListResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BondListItem'
+    BondInfoItem:
+      type: object
+      properties:
+        region:
+          type: string
+          description: Region where the bond is supported.
+        country:
+          type: string
+          description: Country where the bond is supported.
+        type:
+          type: string
+          description: Bond tenor/type (for example 10Y).
+        yield:
+          type: string
+          description: Current bond yield.
+        price_change_day:
+          type: string
+          description: Price change day-over-day.
+        percentage_week:
+          type: string
+          description: Weekly change percentage.
+        percentage_month:
+          type: string
+          description: Monthly change percentage.
+        percentage_year:
+          type: string
+          description: Yearly change percentage.
+        date:
+          type: string
+          description: Quote date.
+    BondInfoResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BondInfoItem'
+    ETFListItem:
+      type: object
+      properties:
+        ticker:
+          type: string
+          description: ETF ticker symbol.
+    ETFListResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ETFListItem'
+    ETFAttributes:
+      type: object
+      properties:
+        series_name:
+          type: string
+          description: Name of the ETF series held by the fund.
+        series_id:
+          type: string
+          description: ID of the ETF held by the fund.
+        series_lei:
+          type: string
+          description: Legal Entity Identifier of the ETF series.
+        ticker:
+          type: string
+          description: ETF ticker.
+        isin:
+          type: string
+          description: International Securities Identification Number.
+        date_report_period:
+          type: string
+          description: Start date of the report period.
+        end_report_period:
+          type: string
+          description: End date of the report period.
+        final_filing:
+          type: boolean
+          description: Indicates whether this is the final filing.
+    ETFSignature:
+      type: object
+      properties:
+        date_signed:
+          type: string
+          description: Signature date.
+        name_of_applicant:
+          type: string
+          description: Name of the applicant.
+        signature:
+          type: string
+          description: Signature text.
+        signer_name:
+          type: string
+          description: Name of the signer.
+        title:
+          type: string
+          description: Signer's title.
+    ETFHoldingSecurity:
+      type: object
+      properties:
+        lei:
+          type: string
+          description: Legal Entity Identifier.
+        isin:
+          type: string
+          description: International Securities Identification Number.
+        name:
+          type: string
+          description: Holding name.
+        cusip:
+          type: string
+          description: U.S./Canada security identifier (CUSIP).
+        title:
+          type: string
+          description: Holding title.
+        units:
+          type: string
+          description: Unit type.
+        balance:
+          type: string
+          description: Holding balance.
+        currency:
+          type: string
+          description: Currency code.
+        value_usd:
+          type: string
+          description: Holding value in USD.
+        percent_value:
+          type: string
+          description: Portfolio percentage weight.
+        asset_category:
+          type: string
+          description: Asset category.
+        cash_collateral:
+          type: string
+          description: Cash collateral flag (Y/N).
+        non_cash_collateral:
+          type: string
+          description: Non-cash collateral flag (Y/N).
+        fair_value_level:
+          type: string
+          description: Fair value hierarchy level (1/2/3).
+        invested_country:
+          type: string
+          description: ISO country code where the security is invested.
+        issuer_category:
+          type: string
+          description: Issuer category (e.g., CORP).
+        loan_by_fund:
+          type: string
+          description: Security on loan by the fund (Y/N).
+        payoff_profile:
+          type: string
+          description: Payoff profile (e.g., Long, Short).
+        restricted_sec:
+          type: string
+          description: Restricted security flag (Y/N).
+    ETFHoldingsResponse:
+      type: object
+      properties:
+        basics:
+          $ref: '#/components/schemas/ETFHoldingsResponse_basics'
+        output:
+          $ref: '#/components/schemas/ETFHoldingsResponse_output'
+    CIKItem:
+      type: object
+      properties:
+        cik_code:
+          type: string
+          description: Company CIK code.
+        company_name:
+          type: string
+          description: Company name.
+        ein:
+          type: string
+          description: Employer Identification Number.
+        sic:
+          type: string
+          description: Standard Industrial Classification.
+        sic_description:
+          type: string
+          description: SIC description.
+    CIKSearchResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CIKItem'
+    CompanyNameByCIKResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CompanyNameByCIKResponse_data'
+    SubmissionsByCIKResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data'
+    CompanyFactsByCIKResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CompanyFactsByCIKResponse_data'
+    AccountsPayableResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AccountsPayableResponse_data'
+    FrameResponse:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+        data:
+          $ref: '#/components/schemas/FrameResponse_data'
+    ApiError_error:
+      required:
+        - code
+        - type
+      type: object
+      properties:
+        code:
+          type: integer
+          description: >-
+            apilayer numeric error code (the code the API returns in the body,
+            e.g. 101 for an invalid access key — NOT the HTTP status).
+          example: 101
+        type:
+          type: string
+          description: Machine-readable error type.
+          example: invalid_access_key
+        info:
+          type: string
+          description: Human-readable error detail.
+          example: >-
+            You have not supplied a valid API Access Key. [Technical Support:
+            support@apilayer.com]
+    CommodityResponse_data:
+      type: object
+      properties:
+        commodity_name:
+          type: string
+          description: Name of the commodity.
+        commodity_unit:
+          type: string
+          description: Unit of the commodity.
+        commodity_price:
+          type: string
+          description: Current price of the commodity.
+        price_change_day:
+          type: string
+          description: Absolute day change.
+        percentage_day:
+          type: string
+          description: Day change in percent.
+        percentage_week:
+          type: string
+          description: Week change in percent.
+        percentage_month:
+          type: string
+          description: Month change in percent.
+        percentage_year:
+          type: string
+          description: Year change in percent.
+        quarter1_25:
+          type: string
+          description: Value for the first quarter of 2025.
+        quarter2_25:
+          type: string
+          description: Value for the second quarter of 2025.
+        quarter3_25:
+          type: string
+          description: Value for the third quarter of 2025.
+        quarter4_25:
+          type: string
+          description: Value for the fourth quarter of 2025.
+        datetime:
+          type: string
+          description: Timestamp of the commodity price in ISO8601 format.
+          format: date-time
+    CommodityHistoricalResponse_result_basics:
+      type: object
+      properties:
+        frequency:
+          type: string
+          description: Frequency of the historical data (e.g., 1day, 1month).
+    CommodityHistoricalResponse_result_commodity_prices:
+      type: object
+      properties:
+        commodity_price:
+          type: string
+          description: Price of the commodity for the date.
+        date:
+          type: string
+          description: Date for the price (YYYY-MM-DD or YYYY-MM for monthly).
+    CommodityHistoricalResponse_result_data:
+      type: object
+      properties:
+        commodity_name:
+          type: string
+          description: Name of the commodity.
+        commodity_unit:
+          type: string
+          description: Unit of the commodity.
+        commodity_prices:
+          type: array
+          items:
+            $ref: >-
+              #/components/schemas/CommodityHistoricalResponse_result_commodity_prices
+    CommodityHistoricalResponse_result:
+      type: object
+      properties:
+        basics:
+          $ref: '#/components/schemas/CommodityHistoricalResponse_result_basics'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommodityHistoricalResponse_result_data'
+    CompanyRatingsResponse_status:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: HTTP status code.
+        message:
+          type: string
+          description: Status message.
+        details:
+          type: string
+          description: Additional details.
+    CompanyRatingsResponse_result_basics:
+      type: object
+      properties:
+        company_name:
+          type: string
+          description: Name of the company.
+        ticker:
+          type: string
+          description: Ticker symbol.
+    CompanyRatingsResponse_result_output_analyst_consensus:
+      type: object
+      properties:
+        consensus_conclusion:
+          type: string
+          description: Overall consensus (e.g. Buy, Hold, Sell).
+        stock_price:
+          type: string
+          description: Current stock price.
+        analyst_average:
+          type: string
+          description: Average analyst price target.
+        analyst_highest:
+          type: string
+          description: Highest analyst price target.
+        analyst_lowest:
+          type: string
+          description: Lowest analyst price target.
+        analysts_number:
+          type: string
+          description: Number of contributing analysts.
+        buy:
+          type: string
+          description: Count of buy ratings.
+        hold:
+          type: string
+          description: Count of hold ratings.
+        sell:
+          type: string
+          description: Count of sell ratings.
+        consensus_date:
+          type: string
+          description: Date of the consensus.
+    CompanyRatingsResponse_result_output_rating:
+      type: object
+      properties:
+        date_rating:
+          type: string
+          description: Date the rating was issued.
+        target_date:
+          type: string
+          description: Target date for the price target.
+        price_target:
+          type: string
+          description: Analyst price target.
+        rated:
+          type: string
+          description: Rating (buy, sell, hold).
+        conclusion:
+          type: string
+          description: Rating conclusion.
+    CompanyRatingsResponse_result_output_analysts:
+      type: object
+      properties:
+        analyst_name:
+          type: string
+          description: Analyst name.
+        analyst_firm:
+          type: string
+          description: Analyst firm.
+        analyst_role:
+          type: string
+          description: Analyst role/title.
+        rating:
+          $ref: '#/components/schemas/CompanyRatingsResponse_result_output_rating'
+    CompanyRatingsResponse_result_output:
+      type: object
+      properties:
+        analyst_consensus:
+          $ref: >-
+            #/components/schemas/CompanyRatingsResponse_result_output_analyst_consensus
+        analysts:
+          type: array
+          description: Individual analyst ratings.
+          items:
+            $ref: '#/components/schemas/CompanyRatingsResponse_result_output_analysts'
+      description: Analyst consensus and individual analyst ratings.
+    CompanyRatingsResponse_result:
+      type: object
+      properties:
+        basics:
+          $ref: '#/components/schemas/CompanyRatingsResponse_result_basics'
+        output:
+          $ref: '#/components/schemas/CompanyRatingsResponse_result_output'
+    TickerExchange_date_expiry:
+      type: object
+      properties:
+        date:
+          type: string
+        timezone_type:
+          type: integer
+        timezone:
+          type: string
+      description: Expiry date (object or null).
+      nullable: true
+    TickerEodResponse_data:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        symbol:
+          type: string
+          description: Ticker symbol.
+        has_intraday:
+          type: boolean
+          description: Indicates if intraday data is available.
+        has_eod:
+          type: boolean
+          description: Indicates if end-of-day data is available.
+        country:
+          type: string
+          description: Country of the ticker.
+        eod:
+          type: array
+          items:
+            $ref: '#/components/schemas/EODBar'
+    TickerSplitsResponse_data:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date of the split.
+        split_factor:
+          type: number
+          description: Split ratio applied on the date.
+        stock_split:
+          type: string
+          description: Additional stock split info (nullable).
+        symbol:
+          type: string
+          description: Ticker symbol the split applies to.
+    TickerDividendsResponse_data:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Ex-dividend date.
+        dividend:
+          type: number
+          description: Dividend amount per share.
+          format: float
+        payment_date:
+          type: string
+          description: Payment date of the dividend.
+        record_date:
+          type: string
+          description: Record date for the dividend.
+        declaration_date:
+          type: string
+          description: Declaration date for the dividend.
+        distr_freq:
+          type: string
+          description: Distribution frequency (e.g., q for quarterly).
+        symbol:
+          type: string
+          description: Ticker symbol the dividend applies to.
+    TickerIntradayResponse_data:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        symbol:
+          type: string
+          description: Ticker symbol.
+        has_intraday:
+          type: boolean
+          description: Indicates if intraday data is available.
+        has_eod:
+          type: boolean
+          description: Indicates if end-of-day data is available.
+        country:
+          type: string
+          description: Country of the ticker.
+        intraday:
+          type: array
+          items:
+            $ref: '#/components/schemas/IntradayBar'
+    TickersListResponse_data:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        ticker:
+          type: string
+          description: Ticker symbol.
+        has_intraday:
+          type: boolean
+          description: Indicates if intraday data is available.
+        has_eod:
+          type: boolean
+          description: Indicates if end-of-day data is available.
+        stock_exchange:
+          $ref: '#/components/schemas/TickerExchange'
+    TickerInfoResponse_data_key_executives:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Executive name.
+        salary:
+          type: string
+          description: Executive salary.
+        function:
+          type: string
+          description: Executive function/role.
+        exercised:
+          type: string
+          description: Exercised options/shares.
+        birth_year:
+          type: string
+          description: Birth year.
+    TickerInfoResponse_data_post_address:
+      type: object
+      properties:
+        city:
+          type: string
+        street1:
+          type: string
+        street2:
+          type: string
+        postal_code:
+          type: string
+        stateOrCountry:
+          type: string
+        state_or_country_description:
+          type: string
+      description: Postal address.
+    TickerInfoResponse_data_stock_exchanges:
+      type: object
+      properties:
+        exchange_name:
+          type: string
+        acronym1:
+          type: string
+        exchange_mic:
+          type: string
+        alpha2_code:
+          type: string
+        country:
+          type: string
+        city:
+          type: string
+        website:
+          type: string
+    TickerInfoResponse_data_address:
+      type: object
+      properties:
+        city:
+          type: string
+        street1:
+          type: string
+        street2:
+          type: string
+        postal_code:
+          type: string
+        stateOrCountry:
+          type: string
+        state_or_country_description:
+          type: string
+    TickerInfoResponse_data:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Company or instrument name.
+        ticker:
+          type: string
+          description: Ticker symbol.
+        item_type:
+          type: string
+          description: Type of item (e.g., equity).
+        sector:
+          type: string
+          description: Sector of the company.
+        industry:
+          type: string
+          description: Industry of the company.
+        exchange_code:
+          type: string
+          description: Exchange code.
+        full_time_employees:
+          type: string
+          description: Number of full-time employees.
+        ipo_date:
+          type: string
+          description: IPO date.
+        date_founded:
+          type: string
+          description: Date founded.
+        key_executives:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerInfoResponse_data_key_executives'
+        incorporation:
+          type: string
+          description: State or country of incorporation.
+        incorporation_description:
+          type: string
+          description: State or country of incorporation, described.
+        start_fiscal:
+          type: string
+          description: Fiscal year start (MM-DD).
+        end_fiscal:
+          type: string
+          description: Fiscal year end (MM-DD).
+        mission:
+          type: string
+          description: Company mission statement.
+        vision:
+          type: string
+          description: Company vision statement.
+        previous_names:
+          type: array
+          description: Former names of the company.
+          items:
+            type: string
+        post_address:
+          $ref: '#/components/schemas/TickerInfoResponse_data_post_address'
+        stock_exchanges:
+          type: array
+          description: Exchanges the ticker is listed on.
+          items:
+            $ref: '#/components/schemas/TickerInfoResponse_data_stock_exchanges'
+        reporting_currency:
+          type: string
+          description: Reporting currency.
+        address:
+          $ref: '#/components/schemas/TickerInfoResponse_data_address'
+        phone:
+          type: string
+          description: Company phone number.
+        website:
+          type: string
+          description: Company website.
+        about:
+          type: string
+          description: Company description.
+    ETFHoldingsResponse_basics:
+      type: object
+      properties:
+        fund_name:
+          type: string
+          description: Fund name.
+        file_number:
+          type: string
+          description: SEC file number.
+        cik:
+          type: string
+          description: SEC CIK of the main trust fund.
+        reg_lei:
+          type: string
+          description: Legal Entity Identifier of the fund.
+    ETFHoldingsResponse_output_holdings:
+      type: object
+      properties:
+        investment_security:
+          $ref: '#/components/schemas/ETFHoldingSecurity'
+    ETFHoldingsResponse_output:
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/ETFAttributes'
+        signature:
+          $ref: '#/components/schemas/ETFSignature'
+        holdings:
+          type: array
+          items:
+            $ref: '#/components/schemas/ETFHoldingsResponse_output_holdings'
+    CompanyNameByCIKResponse_data_addresses_mailing:
+      type: object
+      properties:
+        street1:
+          type: string
+        street2:
+          type: string
+        city:
+          type: string
+        state_or_country:
+          type: string
+        zip_code:
+          type: string
+    CompanyNameByCIKResponse_data_addresses:
+      type: object
+      properties:
+        mailing:
+          $ref: '#/components/schemas/CompanyNameByCIKResponse_data_addresses_mailing'
+        business:
+          $ref: '#/components/schemas/CompanyNameByCIKResponse_data_addresses_mailing'
+      description: Mailing and business addresses.
+    CompanyNameByCIKResponse_data:
+      type: object
+      properties:
+        cik_code:
+          type: string
+          description: Company CIK code.
+        company_name:
+          type: string
+          description: Company name.
+        ein:
+          type: string
+          description: Employer Identification Number.
+        sic:
+          type: string
+          description: Standard Industrial Classification code.
+        sic_description:
+          type: string
+          description: SIC description.
+        phone:
+          type: string
+          description: Company registered phone.
+        incorporation_state:
+          type: string
+          description: Abbreviation of the incorporation state.
+        addresses:
+          $ref: '#/components/schemas/CompanyNameByCIKResponse_data_addresses'
+    SubmissionsByCIKResponse_data_addresses_mailing:
+      type: object
+      properties:
+        street1:
+          type: string
+        street2:
+          type: string
+        city:
+          type: string
+        state_or_country:
+          type: string
+        zip_code:
+          type: string
+        state_or_country_desc:
+          type: string
+    SubmissionsByCIKResponse_data_addresses:
+      type: object
+      properties:
+        mailing:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data_addresses_mailing'
+        business:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data_addresses_mailing'
+      description: Mailing and business addresses.
+    SubmissionsByCIKResponse_data_former_names:
+      type: object
+      properties:
+        name:
+          type: string
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+    SubmissionsByCIKResponse_data_filings_recent:
+      type: object
+      properties:
+        accession_number:
+          type: array
+          items:
+            type: string
+        filing_date:
+          type: array
+          items:
+            type: string
+            format: date
+        report_date:
+          type: array
+          items:
+            type: string
+            format: date
+        acceptance_date_time:
+          type: array
+          items:
+            type: string
+            format: date-time
+        act:
+          type: array
+          items:
+            type: string
+        form:
+          type: array
+          items:
+            type: string
+        file_number:
+          type: array
+          items:
+            type: string
+        film_number:
+          type: array
+          items:
+            type: string
+        core_type:
+          type: array
+          items:
+            type: string
+        size:
+          type: array
+          items:
+            type: integer
+        primary_document:
+          type: array
+          items:
+            type: string
+        primary_doc_description:
+          type: array
+          items:
+            type: string
+      description: Most recent filings as index-aligned parallel arrays.
+    SubmissionsByCIKResponse_data_filings_files:
+      type: object
+      properties:
+        name:
+          type: string
+        filing_count:
+          type: integer
+        filing_from:
+          type: string
+          format: date
+        filing_to:
+          type: string
+          format: date
+    SubmissionsByCIKResponse_data_filings:
+      type: object
+      properties:
+        recent:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data_filings_recent'
+        files:
+          type: array
+          description: References to older, paginated filing files.
+          items:
+            $ref: '#/components/schemas/SubmissionsByCIKResponse_data_filings_files'
+      description: Recent filings and paginated file references.
+    SubmissionsByCIKResponse_data:
+      type: object
+      properties:
+        cik_code:
+          type: string
+          description: SEC Central Index Key (zero-padded).
+        company_name:
+          type: string
+          description: Company name.
+        entity_type:
+          type: string
+          description: Entity type (e.g. operating).
+        ein:
+          type: string
+          description: Employer Identification Number.
+        sic:
+          type: string
+          description: Standard Industrial Classification code.
+        sic_description:
+          type: string
+          description: SIC description.
+        owner_org:
+          type: string
+          description: SEC owner organization classification.
+        insider_transaction_for_owner_exists:
+          type: integer
+          description: Whether insider transactions exist for the owner (0 or 1).
+        insider_transaction_for_issuer_exists:
+          type: integer
+          description: Whether insider transactions exist for the issuer (0 or 1).
+        tickers:
+          type: array
+          items:
+            type: string
+        exchanges:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+          description: Company description.
+        website:
+          type: string
+          description: Company website.
+        investor_website:
+          type: string
+          description: Investor relations website.
+        category_filer:
+          type: string
+          description: Filer category (e.g. Large accelerated filer).
+        fiscal_year_end:
+          type: string
+          description: Fiscal year end (MMDD).
+        incorporation_state_or_country:
+          type: string
+          description: State or country of incorporation.
+        incorporation_state_or_country_desc:
+          type: string
+          description: State or country of incorporation, described.
+        phone:
+          type: string
+          description: Company phone number.
+        addresses:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data_addresses'
+        former_names:
+          type: array
+          description: Previous company names with active date ranges.
+          items:
+            $ref: '#/components/schemas/SubmissionsByCIKResponse_data_former_names'
+        filings:
+          $ref: '#/components/schemas/SubmissionsByCIKResponse_data_filings'
+    CompanyFactsByCIKResponse_data:
+      type: object
+      properties:
+        cik:
+          type: integer
+          description: SEC Central Index Key.
+        company_name:
+          type: string
+          description: Company name.
+        facts:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                label:
+                  type: string
+                  description: Human-readable concept label.
+                description:
+                  type: string
+                  description: Concept definition.
+                units:
+                  type: object
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fp:
+                          type: string
+                          description: Fiscal period (e.g. Q3, FY).
+                          nullable: true
+                        fy:
+                          type: integer
+                          description: Fiscal year.
+                          nullable: true
+                        start:
+                          type: string
+                          description: >-
+                            Period start date. Present on duration concepts
+                            (e.g. revenue, expenses); absent on point-in-time
+                            concepts.
+                          format: date
+                        end:
+                          type: string
+                          description: Period end date.
+                          format: date
+                        val:
+                          type: number
+                          description: Reported value.
+                        accn:
+                          type: string
+                          description: Accession number of the source filing.
+                        form:
+                          type: string
+                          description: Filing form type (e.g. 10-K, 10-Q).
+                        filed:
+                          type: string
+                          description: Filing date.
+                          format: date
+                        frame:
+                          type: string
+                          description: CY frame identifier (present when comparable).
+                  description: Fact values keyed by unit of measure (e.g. USD, shares).
+              description: A single XBRL concept.
+            description: A taxonomy (e.g. us-gaap), keyed by concept tag.
+          description: >-
+            XBRL concepts keyed by taxonomy (e.g. dei, us-gaap), then by concept
+            tag. Keys are dynamic; the value shape below is consistent.
+    AccountsPayableResponse_data_usgaap:
+      type: object
+      properties:
+        label:
+          type: string
+          description: Human-readable concept label.
+        description:
+          type: string
+          description: Concept definition.
+        units:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+              properties:
+                fp:
+                  type: string
+                  description: Fiscal period (e.g. Q3, FY).
+                  nullable: true
+                fy:
+                  type: integer
+                  description: Fiscal year.
+                  nullable: true
+                start:
+                  type: string
+                  description: Period start date (duration concepts).
+                  format: date
+                end:
+                  type: string
+                  description: Period end date.
+                  format: date
+                val:
+                  type: number
+                  description: Reported value.
+                accn:
+                  type: string
+                  description: Accession number of the source filing.
+                form:
+                  type: string
+                  description: Filing form type (e.g. 10-K, 10-Q).
+                filed:
+                  type: string
+                  description: Filing date.
+                  format: date
+                frame:
+                  type: string
+                  description: CY frame identifier (when comparable).
+          description: Fact values keyed by unit of measure (e.g. USD).
+    AccountsPayableResponse_data:
+      type: object
+      properties:
+        cik:
+          type: integer
+          description: SEC Central Index Key.
+        company_name:
+          type: string
+          description: Company name.
+        us-gaap:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/AccountsPayableResponse_data_usgaap'
+          description: >-
+            US GAAP concepts keyed by tag (e.g. AccountsPayableCurrent). Keys
+            are dynamic; value shape is consistent.
+    FrameResponse_data_frame_data:
+      type: object
+      properties:
+        accn:
+          type: string
+          description: Accession number.
+        cik:
+          type: integer
+          description: SEC Central Index Key.
+        entityName:
+          type: string
+          description: Entity name.
+        end:
+          type: string
+          description: End date (YYYY-MM-DD).
+        val:
+          type: number
+          description: Value.
+    FrameResponse_data:
+      type: object
+      properties:
+        taxonomy:
+          type: string
+          description: Taxonomy (e.g., us-gaap).
+        tag:
+          type: string
+          description: Tag name (e.g., AccountsPayableCurrent).
+        ccp:
+          type: string
+          description: Calendar period code (e.g., CY2023Q1I).
+        uom:
+          type: string
+          description: Unit of measure (e.g., USD).
+        label:
+          type: string
+          description: Concept label.
+        description:
+          type: string
+          description: Concept description.
+        frame_data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FrameResponse_data_frame_data'
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            account_on_hold:
+              summary: account_on_hold
+              value:
+                success: false
+                error:
+                  code: 107
+                  type: account_on_hold
+                  info: >-
+                    Your account currently has open invoices and API has been
+                    automatically disabled. Please settle your open balance or
+                    downgrade to the Free Plan to restore API access. [Support:
+                    support@apilayer.com]
+            invalid_access_key:
+              summary: invalid_access_key
+              value:
+                success: false
+                error:
+                  code: 101
+                  type: invalid_access_key
+                  info: >-
+                    You have not supplied a valid API Access Key. [Technical
+                    Support: support@apilayer.com]
+            missing_access_key:
+              summary: missing_access_key
+              value:
+                success: false
+                error:
+                  code: 101
+                  type: missing_access_key
+                  info: >-
+                    You have not supplied an API Access Key. [Required format:
+                    access_key=YOUR_ACCESS_KEY]
+            inactive_user:
+              summary: inactive_user
+              value:
+                success: false
+                error:
+                  code: 102
+                  type: inactive_user
+                  info: Permission denied - User not active.
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            https_access_restricted:
+              summary: https_access_restricted
+              value:
+                success: false
+                error:
+                  code: 105
+                  type: https_access_restricted
+                  info: >-
+                    Access Restricted - Your current Subscription Plan does not
+                    support HTTPS Encryption.
+            function_access_restricted:
+              summary: function_access_restricted
+              value:
+                success: false
+                error:
+                  code: 105
+                  type: function_access_restricted
+                  info: >-
+                    Access Restricted - Your current Subscription Plan does not
+                    support this API Function.
+            api_access_blocked:
+              summary: api_access_blocked
+              value:
+                success: false
+                error:
+                  code: 104
+                  type: api_access_blocked
+                  info: >-
+                    Your API access has been temporarily disabled. Please
+                    upgrade your Subscription Plan or contact support.
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            invalid_api_function:
+              summary: invalid_api_function
+              value:
+                success: false
+                error:
+                  code: 103
+                  type: invalid_api_function
+                  info: This API Function does not exist.
+            404_not_found:
+              summary: 404_not_found
+              value:
+                success: false
+                error:
+                  code: 404
+                  type: 404_not_found
+                  info: >-
+                    404 - The requested resource could not be found. Please try
+                    again or contact support.
+    RateLimitReached:
+      description: Too Many Requests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            usage_limit_reached:
+              summary: usage_limit_reached
+              value:
+                success: false
+                error:
+                  code: 104
+                  type: usage_limit_reached
+                  info: >-
+                    Your monthly usage limit has been reached. Please upgrade
+                    your Subscription Plan.
+            daily_usage_limit_reached:
+              summary: daily_usage_limit_reached
+              value:
+                success: false
+                error:
+                  code: 104
+                  type: daily_usage_limit_reached
+                  info: >-
+                    Your daily usage limit has been reached. Please try again
+                    tomorrow or upgrade your subscription plan.
+            fair_use_limit_reached:
+              summary: fair_use_limit_reached
+              value:
+                success: false
+                error:
+                  code: 104
+                  type: fair_use_limit_reached
+                  info: >-
+                    Your fair use limit has been reached. [Please contact
+                    support: support@apilayer.com]
+            rate_limit_reached:
+              summary: rate_limit_reached
+              value:
+                success: false
+                error:
+                  code: 106
+                  type: rate_limit_reached
+                  info: >-
+                    You have exceeded the maximum rate limitation allowed on
+                    your subscription plan. Please refer to the "Rate Limits"
+                    section of the API Documentation for details. 
+    InternalError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            internal_error:
+              summary: internal_error
+              value:
+                success: false
+                error:
+                  code: 0
+                  type: internal_error
+                  info: >-
+                    An error has occured. [Technical Support:
+                    support@apilayer.com]
+    Maintenance:
+      description: Service Unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          examples:
+            maintenance_mode:
+              summary: maintenance_mode
+              value:
+                success: false
+                error:
+                  code: 503
+                  type: maintenance_mode
+                  info: ''
+  parameters:
+    AccessKey:
+      name: access_key
+      in: query
+      description: Your API access key, which can be found in your account dashboard.
+      required: true
+      schema:
+        type: string
+    Symbols:
+      name: symbols
+      in: query
+      description: >-
+        Comma-separated list of one or more stock ticker symbols. Example:
+        AAPL,MSFT
+      required: true
+      schema:
+        type: string
+    SymbolsRequired:
+      name: symbols
+      in: query
+      description: >-
+        Comma-separated list of one or more stock ticker symbols (required for
+        this endpoint). Example: AAPL,MSFT
+      required: true
+      schema:
+        type: string
+    Exchange:
+      name: exchange
+      in: query
+      description: 'Filter results by stock exchange, identified by its MIC. Example: XNAS'
+      required: false
+      schema:
+        type: string
+    Sort:
+      name: sort
+      in: query
+      description: Sort order of the results by date.
+      required: false
+      schema:
+        type: string
+        default: DESC
+        enum:
+          - DESC
+          - ASC
+          - desc
+          - asc
+    DateFrom:
+      name: date_from
+      in: query
+      description: 'Filter results from a specific start date. [Format: YYYY-MM-DD]'
+      required: false
+      schema:
+        type: string
+        format: date
+    DateTo:
+      name: date_to
+      in: query
+      description: 'Filter results up to a specific end date. [Format: YYYY-MM-DD]'
+      required: false
+      schema:
+        type: string
+        format: date
+    Interval:
+      name: interval
+      in: query
+      description: >-
+        Intraday data interval. Available values: 1min, 5min, 10min, 15min,
+        30min, 1hour, 3hour, 6hour, 12hour, 24hour. Default: 1hour
+      required: false
+      schema:
+        type: string
+        default: 1hour
+        enum:
+          - 1min
+          - 5min
+          - 10min
+          - 15min
+          - 30min
+          - 1hour
+          - 3hour
+          - 6hour
+          - 12hour
+          - 24hour
+    AfterHours:
+      name: after_hours
+      in: query
+      description: Include after-hours data in intraday results.
+      required: false
+      schema:
+        type: boolean
+    Search:
+      name: search
+      in: query
+      description: >-
+        Use this parameter to get autocomplete suggestions by specifying a
+        search term.
+      required: false
+      schema:
+        type: string
+    Limit:
+      name: limit
+      in: query
+      description: Specify a limit of results to return. Default value is 100.
+      required: false
+      schema:
+        maximum: 1000
+        minimum: 1
+        type: integer
+        default: 100
+    Offset:
+      name: offset
+      in: query
+      description: Specify an offset for pagination. Default offset value is 0.
+      required: false
+      schema:
+        minimum: 0
+        type: integer
+        default: 0
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      description: Your Marketstack API access key, found in your account dashboard.
+      name: access_key
+      in: query

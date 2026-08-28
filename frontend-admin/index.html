@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choice FINX · Platform Admin</title>
+<style>
+/* ==========================================================================
+   Choice FINX Algo Terminal
+
+   Design thesis: the chrome is monochrome; colour belongs to data and state.
+   A trading terminal is read, not admired — every hue on screen should mean
+   something. Interface furniture (nav, cards, buttons, rules) is built from
+   a single neutral ramp, so when a number turns red it is unmistakable.
+
+   The data palette is the validated instance from the dataviz method:
+   categorical slots 1–3 (blue / orange / aqua) clear every gate all-pairs
+   against this surface, and the diverging pair is blue↔red with a neutral
+   midpoint. Profit/loss uses the *delta* tokens and is always accompanied by
+   a sign and an arrow, never colour alone.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  /* Neutral ramp — near-black with a faint cool cast, not a blue-grey slate. */
+  --plane:        #08090b;
+  --surface-1:    #101216;
+  --surface-2:    #171a1f;
+  --surface-3:    #1e2229;
+  --hairline:     #23272e;
+  --hairline-str: #2f343d;
+
+  --ink-1:        #f4f5f7;
+  --ink-2:        #a8adb8;
+  --ink-3:        #6d737f;
+  --ink-4:        #4a4f59;
+
+  /* Data — categorical slots, validated against --surface-1 */
+  --series-1:     #3987e5;
+  --series-2:     #d95926;
+  --series-3:     #199e70;
+
+  /* Diverging pair + neutral midpoint (blue ↔ red) */
+  --div-pos:      #3987e5;
+  --div-neg:      #e66767;
+  --div-mid:      #383835;
+
+  /* State. Never used for a data series. Always paired with a glyph. */
+  --up:           #0ca30c;
+  --up-soft:      rgba(12,163,12,.12);
+  --down:         #e5484d;
+  --down-soft:    rgba(229,72,77,.12);
+  --warn:         #fab219;
+  --warn-soft:    rgba(250,178,25,.12);
+  --info:         #3987e5;
+  --info-soft:    rgba(57,135,229,.12);
+
+  /* Chart chrome */
+  --grid:         #1c1f25;
+  --axis:         #2a2f37;
+
+  --radius:       10px;
+  --radius-sm:    6px;
+  --shadow:       0 1px 2px rgba(0,0,0,.4), 0 12px 32px -20px rgba(0,0,0,.9);
+
+  --font: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+/* Dark-first, so :root carries the dark set above and light is the override.
+   Declared under both scopes: the media query follows the OS, the data-theme
+   scope follows the in-app toggle, and the :not() guard lets an explicit
+   choice beat the OS in either direction. Colours are only ever defined as
+   tokens — never inside a media block alone, which is how a page ends up
+   rendering one theme's text on the other theme's ground. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --plane:        #f2f2f1;
+    --surface-1:    #ffffff;
+    --surface-2:    #f7f7f6;
+    --surface-3:    #eeeeec;
+    --hairline:     #e3e3e0;
+    --hairline-str: #d3d3cf;
+
+    --ink-1:        #101114;
+    --ink-2:        #4d5058;
+    --ink-3:        #767a83;
+    --ink-4:        #a0a4ac;
+
+    --series-1:     #2a78d6;
+    --series-2:     #eb6834;
+    --series-3:     #1baf7a;
+
+    --div-pos:      #2a78d6;
+    --div-neg:      #e34948;
+    --div-mid:      #f0efec;
+
+    --up:           #087f08;
+    --up-soft:      rgba(8,127,8,.10);
+    --down:         #cc2f34;
+    --down-soft:    rgba(204,47,52,.10);
+    --warn:         #a76a00;
+    --warn-soft:    rgba(167,106,0,.10);
+    --info:         #2a78d6;
+    --info-soft:    rgba(42,120,214,.10);
+
+    --grid:         #ececea;
+    --axis:         #d3d3cf;
+    --shadow:       0 1px 2px rgba(16,17,20,.06), 0 12px 32px -20px rgba(16,17,20,.28);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --plane:        #f2f2f1;
+  --surface-1:    #ffffff;
+  --surface-2:    #f7f7f6;
+  --surface-3:    #eeeeec;
+  --hairline:     #e3e3e0;
+  --hairline-str: #d3d3cf;
+
+  --ink-1:        #101114;
+  --ink-2:        #4d5058;
+  --ink-3:        #767a83;
+  --ink-4:        #a0a4ac;
+
+  --series-1:     #2a78d6;
+  --series-2:     #eb6834;
+  --series-3:     #1baf7a;
+
+  --div-pos:      #2a78d6;
+  --div-neg:      #e34948;
+  --div-mid:      #f0efec;
+
+  --up:           #087f08;
+  --up-soft:      rgba(8,127,8,.10);
+  --down:         #cc2f34;
+  --down-soft:    rgba(204,47,52,.10);
+  --warn:         #a76a00;
+  --warn-soft:    rgba(167,106,0,.10);
+  --info:         #2a78d6;
+  --info-soft:    rgba(42,120,214,.10);
+
+  --grid:         #ececea;
+  --axis:         #d3d3cf;
+  --shadow:       0 1px 2px rgba(16,17,20,.06), 0 12px 32px -20px rgba(16,17,20,.28);
+}
+
+/* Density: a trader who wants more rows on screen should get them without a
+   different layout. */
+:root[data-density="compact"] { --row-pad: .38rem; --card-pad: .7rem; }
+:root { --row-pad: .6rem; --card-pad: 1rem; }
+
+/* Spacing scale — identical to the trading app, so the two pages read as one
+   product. See frontend-user/index.html for why it is dense. */
+:root {
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 2rem;
+}
+
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink-1);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers that sit in columns must align; standalone figures need not. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; border-radius: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* ---------------------------------------------------------------- ticker -- */
+
+.tape {
+  display: flex; gap: 0; align-items: stretch;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
+  overflow-x: auto; scrollbar-width: none;
+  height: 34px;
+}
+.tape::-webkit-scrollbar { display: none; }
+.tape-item {
+  display: flex; align-items: center; gap: .5rem;
+  padding: 0 .9rem; white-space: nowrap;
+  border-right: 1px solid var(--hairline);
+  font-size: 12px;
+}
+.tape-sym { color: var(--ink-3); font-weight: 600; letter-spacing: .02em; }
+.tape-px  { color: var(--ink-1); font-weight: 600; }
+.tape-note { color: var(--ink-3); padding: 0 .9rem; display: flex; align-items: center; font-size: 12px; }
+
+/* ---------------------------------------------------------------- header -- */
+
+.topbar {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 0 1.25rem; height: 56px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--hairline);
+  position: sticky; top: 0; z-index: 60;
+}
+
+.brand { display: flex; align-items: center; gap: .6rem; font-weight: 650; letter-spacing: -.01em; }
+
+/* Choice's own logo, inlined so it needs no network request and so the
+   wordmark can take the theme's text colour. Shipped as near-black
+   (#0f1621), which is 1.03:1 against the dark surface — invisible. The blue
+   tagline keeps its exact brand colour (4.48:1 dark, 4.18:1 light, both above
+   the 3:1 WCAG asks of a graphical element). */
+.brand-logo { height: 30px; width: auto; display: block; flex: none; }
+.brand-sep { width: 1px; height: 18px; background: var(--ink-1); opacity: .22; flex: none; }
+.brand small { color: var(--ink-3); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; }
+
+.nav { display: flex; gap: 2px; margin-left: .5rem; }
+.nav button {
+  background: none; border: 0; cursor: pointer;
+  color: var(--ink-3); padding: .45rem .8rem; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+}
+.nav button:hover { color: var(--ink-1); background: var(--surface-2); }
+.nav button[aria-selected="true"] { color: var(--ink-1); background: var(--surface-3); }
+
+.spacer { flex: 1; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .3rem .6rem; border-radius: 999px;
+  border: 1px solid var(--hairline-str); background: var(--surface-2);
+  font-size: 11.5px; font-weight: 600; letter-spacing: .01em; color: var(--ink-2);
+}
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.chip.is-live   { color: var(--down); border-color: rgba(229,72,77,.35); background: var(--down-soft); }
+.chip.is-paper  { color: var(--info); border-color: rgba(57,135,229,.35); background: var(--info-soft); }
+.chip.is-demo   { color: var(--warn); border-color: rgba(250,178,25,.35); background: var(--warn-soft); }
+.chip.is-off    { color: var(--ink-3); }
+
+.who { color: var(--ink-2); font-size: 13px; }
+.who b { color: var(--ink-1); font-weight: 600; }
+
+/* The header is a single row at every width: elements shed rather than wrap,
+   because a wrapped toolbar in a terminal costs vertical space that belongs to
+   the data. */
+.topbar > * { flex: none; }
+/* topbar-scroll: below this width the nav no longer fits. Let the bar scroll
+   inside itself rather than widening the document — a page that scrolls
+   sideways hides content and is the one layout fault worth never shipping. */
+@media (max-width: 900px) {
+  .topbar { overflow-x: auto; scrollbar-width: none; }
+  .topbar::-webkit-scrollbar { display: none; }
+}
+.brand { white-space: nowrap; }
+.chip { white-space: nowrap; }
+.who { white-space: nowrap; }
+
+@media (max-width: 1240px) { .who { display: none; } }
+@media (max-width: 1040px) { .brand small { display: none; } }
+/* Below this the tagline is too small to read; drop it rather than
+   render an illegible smear, and shrink the lockup to the wordmark. */
+@media (max-width: 880px) {
+  .brand-tagline { display: none; }
+  .brand-logo { height: 20px; }
+  .brand-sep { display: none; }
+}
+@media (max-width: 900px) {
+  .brand span:last-child { display: none; }
+  .nav button { padding: .45rem .6rem; font-size: 12px; }
+  main { padding: .75rem; }
+}
+@media (max-width: 720px) {
+  .topbar { gap: .6rem; padding: 0 .75rem; }
+  .chip { padding: .3rem .45rem; }
+}
+
+/* ----------------------------------------------------------------- button -- */
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  padding: .45rem .85rem; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--hairline-str); background: var(--surface-2); color: var(--ink-1);
+  font-size: 13px; font-weight: 550; white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease;
+}
+.btn:hover { background: var(--surface-3); border-color: var(--ink-4); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--ink-1); color: var(--plane); border-color: var(--ink-1); font-weight: 650; }
+.btn-primary:hover { background: #fff; border-color: #fff; }
+.btn-danger { background: var(--down); border-color: var(--down); color: #fff; font-weight: 650; }
+.btn-danger:hover { background: #f05a5f; border-color: #f05a5f; }
+.btn-ghost { background: none; border-color: transparent; color: var(--ink-3); }
+.btn-ghost:hover { color: var(--ink-1); background: var(--surface-2); }
+.btn-sm { padding: .28rem .6rem; font-size: 12px; }
+
+/* ------------------------------------------------------------------ shell -- */
+
+main { padding: var(--space-5); max-width: 1680px; margin: 0 auto; }
+.view { display: none; }
+.view.is-active { display: block; }
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-head {
+  display: flex; align-items: center; gap: .75rem;
+  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--hairline);
+}
+.card-title { font-size: 13px; font-weight: 650; letter-spacing: -.005em; }
+.card-sub { font-size: 11.5px; color: var(--ink-3); }
+.card-body { padding: var(--card-pad); }
+
+.eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+
+/* -------------------------------------------------------------- stat tile -- */
+
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-3); }
+@media (max-width: 1180px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 620px)  { .kpis { grid-template-columns: 1fr; } }
+
+.tile { padding: .85rem 1rem 1rem; display: flex; flex-direction: column; gap: .45rem; min-height: 116px; }
+.tile-top { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.tile-val {
+  font-size: 26px; font-weight: 660; letter-spacing: -.022em; line-height: 1.1;
+}
+.tile-val.is-muted { color: var(--ink-3); font-weight: 500; }
+.tile-foot { display: flex; align-items: center; gap: .5rem; font-size: 12px; color: var(--ink-3); min-height: 18px; }
+
+/* Delta always carries a glyph, so colour is never the only signal. */
+.delta { display: inline-flex; align-items: center; gap: .25rem; font-weight: 650; font-size: 12px; }
+.delta.up   { color: var(--up); }
+.delta.down { color: var(--down); }
+.delta.flat { color: var(--ink-3); }
+
+/* Utilisation meter — a magnitude read at a glance, not a pie. */
+.meter { height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.meter > i { display: block; height: 100%; border-radius: 2px; background: var(--series-1); transition: width .3s ease; }
+.meter.is-warn > i { background: var(--warn); }
+.meter.is-hot  > i { background: var(--down); }
+
+/* -------------------------------------------------------------------- grid */
+
+.grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: .75rem; }
+.grid-2-even { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+@media (max-width: 1180px) { .grid-2, .grid-2-even { grid-template-columns: 1fr; } }
+.stack { display: grid; gap: .75rem; }
+
+/* ------------------------------------------------------------------ table -- */
+
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  text-align: left; padding: .5rem 1rem; font-size: 10px; font-weight: 700;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--hairline); white-space: nowrap;
+  position: sticky; top: 0; background: var(--surface-1);
+}
+tbody td { padding: var(--row-pad) 1rem; border-bottom: 1px solid var(--hairline); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: var(--surface-2); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sym { font-weight: 600; }
+.sub { color: var(--ink-3); font-size: 11px; }
+
+.tag {
+  display: inline-block; padding: .12rem .4rem; border-radius: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+  border: 1px solid var(--hairline-str); color: var(--ink-2); background: var(--surface-2);
+}
+.tag.buy  { color: var(--up); border-color: rgba(12,163,12,.3); background: var(--up-soft); }
+.tag.sell { color: var(--down); border-color: rgba(229,72,77,.3); background: var(--down-soft); }
+.tag.ok   { color: var(--info); border-color: rgba(57,135,229,.3); background: var(--info-soft); }
+.tag.bad  { color: var(--down); border-color: rgba(229,72,77,.3); background: var(--down-soft); }
+.tag.warn { color: var(--warn); border-color: rgba(250,178,25,.3); background: var(--warn-soft); }
+
+/* ------------------------------------------------------------------ charts */
+
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .gridline { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .axisline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+.chart .tick { fill: var(--ink-3); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.chart .lbl  { fill: var(--ink-2); font-size: 11px; }
+.chart .val  { fill: var(--ink-1); font-size: 11px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.chart .series-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart .hit { fill: transparent; cursor: crosshair; }
+
+.tip {
+  position: absolute; pointer-events: none; z-index: 30;
+  background: var(--surface-3); border: 1px solid var(--hairline-str);
+  border-radius: var(--radius-sm); padding: .5rem .6rem; box-shadow: var(--shadow);
+  font-size: 11.5px; min-width: 128px; opacity: 0; transition: opacity .1s ease;
+}
+.tip.is-on { opacity: 1; }
+.tip-h { color: var(--ink-3); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; margin-bottom: .25rem; }
+.tip-r { display: flex; justify-content: space-between; gap: 1rem; }
+.tip-r b { font-variant-numeric: tabular-nums; font-weight: 650; }
+
+.legend { display: flex; flex-wrap: wrap; gap: .9rem; font-size: 11.5px; color: var(--ink-2); }
+.legend i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; margin-right: .35rem; vertical-align: -1px; }
+
+/* Sortable headers announce themselves on hover and mark the active key. */
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink-1); }
+th.sortable[aria-sort]::after { content: " 91"; opacity: .9; }
+th.sortable[aria-sort="descending"]::after { content: " 93"; }
+
+/* Skeletons hold the layout while data arrives, so nothing jumps. */
+.skeleton { display: block; height: 10px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%; animation: shimmer 1.3s linear infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+kbd { font: 11px var(--mono); background: var(--surface-3); border: 1px solid var(--hairline-str);
+  border-bottom-width: 2px; border-radius: 4px; padding: .05rem .3rem; color: var(--ink-2); }
+
+.shortcut-row { display: flex; justify-content: space-between; gap: 1rem;
+  padding: .35rem 0; border-bottom: 1px solid var(--hairline); font-size: 12.5px; }
+.shortcut-row:last-child { border-bottom: 0; }
+
+/* Order ticket preview: the numbers that decide whether to send it. */
+.ticket { display: grid; gap: .3rem; padding: .7rem .8rem; border-radius: var(--radius-sm);
+  background: var(--surface-2); border: 1px solid var(--hairline); margin-top: .6rem; }
+.ticket-row { display: flex; justify-content: space-between; font-size: 12.5px; }
+.ticket-row span { color: var(--ink-3); }
+.ticket-row b { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ticket-row.total { border-top: 1px solid var(--hairline); padding-top: .35rem; margin-top: .2rem; }
+.ticket-row.total b { font-size: 14px; }
+
+.empty { padding: 2rem 1rem; text-align: center; color: var(--ink-3); font-size: 12.5px; }
+.empty b { display: block; color: var(--ink-2); font-weight: 600; margin-bottom: .2rem; font-size: 13px; }
+
+/* ------------------------------------------------------------------ forms -- */
+
+.field { display: grid; gap: .3rem; margin-bottom: .75rem; }
+.field label { font-size: 11.5px; color: var(--ink-2); font-weight: 550; }
+.field input, .field select, .field textarea {
+  background: var(--plane); border: 1px solid var(--hairline-str);
+  border-radius: var(--radius-sm); padding: .5rem .65rem; color: var(--ink-1); font-size: 13px;
+}
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--series-1); outline: none; }
+.field textarea { font-family: var(--mono); font-size: 12px; line-height: 1.6; resize: vertical; }
+.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; }
+
+.note {
+  border: 1px solid var(--hairline-str); background: var(--surface-2);
+  border-radius: var(--radius-sm); padding: .6rem .75rem; font-size: 12px; color: var(--ink-2);
+}
+.note.warn { border-color: rgba(250,178,25,.35); background: var(--warn-soft); color: var(--warn); }
+table.mini { width: 100%; border-collapse: collapse; }
+table.mini td { padding: .35rem .1rem; border-bottom: 1px solid var(--line, var(--hairline)); font-size: .84rem; vertical-align: top; }
+table.mini tr:last-child td { border-bottom: 0; }
+table.mini td .sub { color: var(--ink-3); font-size: .77rem; margin-top: .1rem; }
+
+.note.bad  { border-color: rgba(229,72,77,.35); background: var(--down-soft); color: var(--down); }
+.note.info { border-color: rgba(57,135,229,.35); background: var(--info-soft); color: var(--info); }
+.note b { display: block; margin-bottom: .15rem; }
+
+/* ------------------------------------------------------------------ modal -- */
+
+.scrim {
+  position: fixed; inset: 0; z-index: 100; display: none;
+  align-items: center; justify-content: center; padding: 1.5rem;
+  background: rgba(4,5,7,.78); backdrop-filter: blur(3px);
+}
+.scrim.is-open { display: flex; }
+.modal {
+  width: min(460px, 100%); max-height: 92vh; overflow-y: auto;
+  background: var(--surface-1); border: 1px solid var(--hairline-str);
+  border-radius: 14px; box-shadow: 0 24px 64px -12px rgba(0,0,0,.9); padding: 1.35rem;
+}
+.modal h2 { margin: 0 0 .2rem; font-size: 17px; font-weight: 650; letter-spacing: -.015em; }
+.modal p.lede { margin: 0 0 1.1rem; color: var(--ink-3); font-size: 12.5px; }
+
+.seg { display: flex; gap: 2px; padding: 2px; background: var(--surface-3); border-radius: var(--radius-sm); margin-bottom: .75rem; }
+.seg button {
+  flex: 1; border: 0; background: none; cursor: pointer; color: var(--ink-3);
+  padding: .4rem; border-radius: 4px; font-size: 12.5px; font-weight: 600;
+}
+.seg button[aria-selected="true"] { background: var(--surface-1); color: var(--ink-1); }
+
+.toast {
+  position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 200;
+  background: var(--surface-3); border: 1px solid var(--hairline-str);
+  border-left: 3px solid var(--ink-2);
+  border-radius: var(--radius-sm); padding: .7rem .9rem; font-size: 13px;
+  box-shadow: var(--shadow); max-width: 380px; display: none;
+}
+.toast.is-on { display: block; }
+.toast.ok  { border-left-color: var(--up); }
+.toast.bad { border-left-color: var(--down); }
+
+.console {
+  font-family: var(--mono); font-size: 11.5px; line-height: 1.65;
+  background: var(--plane); border: 1px solid var(--hairline);
+  border-radius: var(--radius-sm); padding: .75rem; max-height: 240px; overflow-y: auto;
+  color: var(--ink-2); white-space: pre-wrap;
+}
+</style>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%232777f3%22%2F%3E%3Ctext%20x%3D%2216%22%20y%3D%2222.5%22%20font-family%3D%22Segoe%20UI%2CHelvetica%2CArial%2Csans-serif%22%20font-size%3D%2220%22%20font-weight%3D%22700%22%20fill%3D%22%23fff%22%20text-anchor%3D%22middle%22%3EC%3C%2Ftext%3E%3C%2Fsvg%3E">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+  <!-- Choice logo, inlined from
+       https://choiceindia.com/_next/static/media/logo-v-2.b890ec3e.svg
+       (fetched 12 Aug 2026). Inlined rather than linked so the page stays
+       self-contained and offline, and so the wordmark can take the theme's
+       text colour — the supplied #0f1621 is 1.03:1 on the dark surface.
+       "Choice" and the tagline are Choice International's trademarks. -->
+    <svg class="brand-logo" viewBox="0 0 110 42" role="img" aria-label="Choice"><path fill="currentColor" d="M22.796 22.703c.26.26.26.533 0 .794a12.88 12.88 0 0 1-9.211 3.826C6.035 27.334 0 21.306 0 13.69 0 6.073 6.035 0 13.585 0a12.88 12.88 0 0 1 9.21 3.825c.26.261.26.534 0 .795L20.31 7.31c-.226.261-.53.261-.79.034-1.583-1.407-3.55-2.27-5.968-2.27-4.6 0-8.228 3.678-8.228 8.604 0 4.927 3.628 8.57 8.228 8.57 2.418 0 4.374-.873 5.967-2.27.26-.227.565-.227.791.034zM42.54 15.7v10.579a.56.56 0 0 1-.565.567h-3.854a.56.56 0 0 1-.565-.567v-9.671c0-3.065-1.661-4.132-3.47-4.132-2.791 0-4.08 2.77-4.08 3.643v10.16a.56.56 0 0 1-.565.567h-3.854a.56.56 0 0 1-.564-.567V1.068A.56.56 0 0 1 25.587.5h3.854a.56.56 0 0 1 .566.568v10.227c1.209-1.975 3.175-3.45 5.854-3.45 3.775 0 6.68 2.883 6.68 7.843zM44.992 17.595c0-5.46 4.26-9.74 9.584-9.74s9.584 4.28 9.584 9.74-4.26 9.74-9.584 9.74-9.584-4.28-9.584-9.74m14.376 0c0-2.997-2.147-5.12-4.792-5.12s-4.792 2.123-4.792 5.12 2.114 5.12 4.792 5.12 4.792-2.123 4.792-5.12M66.375 2.77c0-1.521 1.21-2.77 2.758-2.77s2.712 1.249 2.712 2.77-1.21 2.77-2.712 2.77c-1.504 0-2.758-1.25-2.758-2.77m.825 5.494h3.854c.339 0 .565.227.565.567v17.436c0 .34-.226.568-.565.568H67.2c-.339 0-.565-.227-.565-.568V8.831c0-.34.226-.567.565-.567M87.612 21.034c.305-.26.565-.26.825 0l2.305 2.203c.226.227.26.533.034.794a9.52 9.52 0 0 1-7.244 3.303c-5.323 0-9.437-4.28-9.437-9.74s4.114-9.739 9.437-9.739c2.87 0 5.402 1.295 7.131 3.304.226.26.192.567-.034.794l-2.305 2.237c-.26.26-.531.226-.825-.034-1.063-.943-2.148-1.67-3.854-1.67-2.792 0-4.758 2.203-4.758 5.12s1.966 5.12 4.758 5.12c1.774 0 2.904-.715 3.967-1.669zM108.689 19.41H96.833c.486 2.464 2.373 3.872 5.289 3.872 1.469 0 2.645-.375 3.922-1.294.339-.227.565-.227.825.034l1.661 1.634c.26.261.26.534-.034.829a9.62 9.62 0 0 1-6.871 2.838c-5.775 0-9.742-4.28-9.742-9.74s3.967-9.74 9.324-9.74S110 12.124 110 17.176c0 1.475-.193 2.236-1.323 2.236zm-11.935-3.257h8.827c-.34-2.61-2.114-4.052-4.34-4.052s-4.08 1.441-4.487 4.052"/><path class="brand-tagline" fill="#2777f3" d="M29.859 32.579v.59c0 .09-.068.159-.158.159h-1.673v6.402c0 .091-.068.16-.158.16h-.667a.155.155 0 0 1-.158-.16v-6.402h-1.673a.155.155 0 0 1-.158-.159v-.59c0-.091.068-.16.158-.16h4.329c.09 0 .158.069.158.16M35.204 36.654v3.076c0 .09-.068.159-.158.159h-.633a.155.155 0 0 1-.158-.16v-2.962c0-.908-.452-1.35-1.142-1.35-.971 0-1.48.964-1.48 1.18v3.133c0 .09-.068.159-.158.159h-.633a.155.155 0 0 1-.158-.16v-7.468c0-.091.067-.16.158-.16h.633c.09 0 .158.069.158.16v3.28c.373-.556.95-.987 1.73-.987 1.084 0 1.841.715 1.841 2.11zM41.104 37.107c0 .374-.045.556-.316.556h-3.764c.136.92.791 1.555 1.83 1.555.589 0 .984-.204 1.334-.477.08-.068.136-.09.226 0l.272.261c.079.091.09.16 0 .25-.486.511-1.164.795-1.944.795-1.56 0-2.656-1.203-2.656-2.747s1.062-2.747 2.565-2.747c1.504 0 2.442 1.203 2.442 2.565zm-4.08-.148h3.244c-.057-.92-.712-1.589-1.605-1.589s-1.526.647-1.639 1.59M45.184 38.594c.271.227.622.442 1.175.442.86 0 1.39-.59 1.39-1.895v-4.552c0-.091.068-.16.159-.16h.667c.09 0 .158.069.158.16v4.586c0 1.975-.927 2.815-2.362 2.815-.814 0-1.436-.295-1.786-.704-.068-.08-.068-.148 0-.227l.362-.454q.101-.12.237 0zM49.728 37.288c0-1.544 1.152-2.747 2.644-2.747s2.656 1.192 2.656 2.747-1.153 2.747-2.656 2.747-2.645-1.192-2.645-2.747m4.385 0c0-1.09-.758-1.862-1.73-1.862s-1.729.784-1.729 1.862.769 1.862 1.73 1.862c.96 0 1.729-.784 1.729-1.862M60.204 34.838l-2.746 6.947c-.034.09-.102.124-.192.124h-.633c-.113 0-.181-.068-.125-.181l.735-1.828-2-5.074c-.046-.113 0-.181.124-.181h.644c.09 0 .158.045.192.124l1.503 3.996 1.504-3.996c.033-.09.101-.124.192-.124h.655c.113 0 .17.068.125.181zM62.973 37.288c0-1.544 1.152-2.747 2.644-2.747s2.656 1.192 2.656 2.747-1.153 2.747-2.656 2.747-2.644-1.192-2.644-2.747m4.373 0c0-1.09-.757-1.862-1.729-1.862s-1.729.784-1.729 1.862.769 1.862 1.73 1.862c.96 0 1.728-.784 1.728-1.862M72.523 32.816l-.35.341c-.068.068-.09.057-.136.023-.26-.16-.475-.284-.791-.284-.554 0-.69.272-.69.726v1.045h1.04c.09 0 .158.068.158.159v.476c0 .091-.068.16-.158.16h-1.04v4.267c0 .091-.067.16-.158.16h-.633a.155.155 0 0 1-.158-.16v-4.268h-.622a.155.155 0 0 1-.158-.159v-.476c0-.091.068-.16.158-.16h.622v-1.123c0-.988.531-1.51 1.57-1.51.611 0 1.086.307 1.357.636.045.057.034.09 0 .136zM79.79 39.14v.59c0 .091-.068.16-.158.16h-3.73a.155.155 0 0 1-.158-.16V32.58c0-.091.068-.16.158-.16h3.719c.09 0 .158.069.158.16v.59c0 .09-.068.159-.158.159h-2.894v2.18h2.724c.09 0 .158.068.158.158v.59c0 .091-.067.16-.158.16h-2.724v2.576h2.905c.09 0 .158.069.158.16zM85.927 34.815v4.904c0 .09-.068.159-.158.159h-.588c-.09 0-.147-.068-.158-.16l-.045-.59c-.407.523-.995.875-1.763.875-1.48 0-2.543-1.204-2.543-2.736s1.062-2.736 2.543-2.736c.768 0 1.367.364 1.774.886l.034-.625c0-.09.068-.159.158-.159h.588c.09 0 .158.069.158.16zm-.915 2.463c0-1.01-.724-1.861-1.695-1.861s-1.718.794-1.718 1.861.734 1.873 1.718 1.873c.983 0 1.695-.851 1.695-1.873M89.894 34.917l-.204.477c-.045.09-.101.102-.214.09-.09-.022-.204-.067-.418-.067-.645 0-1.142.488-1.142 1.157v3.145c0 .09-.068.159-.158.159h-.633a.155.155 0 0 1-.158-.16v-4.903c0-.09.068-.159.158-.159h.588c.09 0 .147.068.158.159l.045.477c.283-.443.712-.76 1.3-.76.271 0 .497.079.644.192.068.046.08.091.034.182zM95.002 36.653v3.076c0 .09-.068.159-.158.159h-.633a.155.155 0 0 1-.158-.159v-2.963c0-.908-.452-1.35-1.142-1.35-.972 0-1.48.964-1.48 1.18v3.133c0 .09-.068.159-.158.159h-.633a.155.155 0 0 1-.159-.159v-4.904c0-.09.068-.159.159-.159h.599c.09 0 .147.068.158.16l.045.714c.373-.556.95-.987 1.73-.987 1.084 0 1.841.715 1.841 2.111zM95.94 32.895c0-.33.26-.59.588-.59s.576.26.576.59-.26.579-.576.579a.59.59 0 0 1-.588-.579m.26 1.76h.633c.09 0 .159.067.159.158v4.904c0 .09-.068.159-.159.159H96.2a.155.155 0 0 1-.158-.159v-4.904c0-.09.068-.159.158-.159M102.563 36.653v3.076c0 .09-.068.159-.159.159h-.632a.155.155 0 0 1-.159-.159v-2.963c0-.908-.452-1.35-1.141-1.35-.972 0-1.48.964-1.48 1.18v3.133c0 .09-.069.159-.159.159H98.2a.155.155 0 0 1-.158-.159v-4.904c0-.09.068-.159.158-.159h.6c.09 0 .146.068.157.16l.046.714c.373-.556.949-.987 1.729-.987 1.085 0 1.842.715 1.842 2.111zM108.7 34.813v4.972c0 1.635-1.469 2.214-2.667 2.214-.825 0-1.548-.216-2.046-.545-.09-.057-.09-.136-.056-.227l.203-.375c.057-.09.124-.102.215-.068.441.239.938.386 1.627.386.837 0 1.82-.363 1.82-1.396v-.783c-.407.533-.995.908-1.797.908-1.481 0-2.543-1.203-2.543-2.68 0-1.475 1.062-2.678 2.543-2.678.768 0 1.367.352 1.774.874l.034-.613c0-.09.068-.159.158-.159h.588c.091 0 .158.068.158.16zm-.915 2.407c0-.965-.724-1.805-1.696-1.805s-1.718.795-1.718 1.805.735 1.816 1.718 1.816c.984 0 1.696-.851 1.696-1.816"/></svg>
+    <span class="brand-sep"></span>
+    <span>FINX <small>Admin Console</small></span>
+  </div>
+  <div class="spacer"></div>
+  <span class="chip is-off" id="env-chip"><i class="dot"></i><span id="env-text">—</span></span>
+  <button class="btn btn-ghost btn-sm" onclick="toggleTheme()">Theme</button>
+  <button class="btn btn-sm" onclick="loadAll()">Refresh</button>
+  <button class="btn btn-ghost btn-sm" onclick="signOut()">Sign out</button>
+</header>
+
+<main>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid-2" style="margin-bottom:.75rem">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Activity by action</div>
+        <div class="card-sub">Audit events, most frequent first</div></div>
+      </div>
+      <div class="card-body"><div class="chart" id="chart-actions"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">Order outcomes</div>
+        <div class="card-sub">Submissions by outcome</div></div>
+      </div>
+      <div class="card-body"><div class="chart" id="chart-orders"></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:.75rem">
+    <div class="card-head">
+      <div><div class="card-title">Tenants</div>
+      <div class="card-sub">Users and strategies per organisation</div></div>
+      <div class="spacer"></div>
+      <span class="card-sub" id="tenant-count"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="tbl-tenants">
+        <thead><tr>
+          <th data-key="name">Tenant</th><th data-key="plan">Plan</th>
+          <th class="num" data-key="user_count">Users</th>
+          <th class="num" data-key="strategy_count">Strategies</th>
+          <th class="num" data-key="order_count">Orders</th>
+          <th class="num" data-key="paper_pnl">Paper P&amp;L</th>
+          <th class="num" data-key="last_activity">Last activity</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tenant-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:.75rem">
+    <div class="card-head">
+      <div><div class="card-title">Regulatory checklist</div>
+      <div class="card-sub">What still blocks live multi-user trading</div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-sm" onclick="loadCompliance()">Check</button>
+    </div>
+    <div class="card-body" id="compliance-body">
+      <div class="empty">Run the check to see the outstanding blockers.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div><div class="card-title">Audit trail</div>
+      <div class="card-sub">Logins, broker connections, orders and strategy changes.
+        Retain 5 years per the Choice OpenAPI Integration Guide §12.</div></div>
+      <div class="spacer"></div>
+      <select id="action-filter" onchange="renderAudit()"
+              style="background:var(--plane);border:1px solid var(--hairline-str);
+                     border-radius:6px;padding:.35rem .5rem;font-size:12px">
+        <option value="">All actions</option>
+      </select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Time</th><th>Action</th><th>Entity</th><th>Actor</th><th>Detail</th>
+        </tr></thead>
+        <tbody id="audit-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="page-error" style="margin-top:.75rem"></div>
+</main>
+
+<div class="scrim is-open" id="auth-scrim">
+  <div class="modal">
+    <h2>Platform admin</h2>
+    <p class="lede">Requires an account with the admin role. Grant one with
+      <code style="font-family:var(--mono);font-size:11.5px">python backend/scripts/manage_admin.py grant &lt;email&gt;</code>.</p>
+    <form onsubmit="signIn(event)">
+      <div class="field"><label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" required></div>
+      <button class="btn btn-primary" type="submit" style="width:100%">Sign in</button>
+    </form>
+    <div id="login-error" style="margin-top:.75rem"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+
+"use strict";
+
+/* ==========================================================================
+   Charts
+
+   Hand-built SVG rather than a charting library: it removes a CDN dependency
+   that fails whenever the desktop app is offline, and it lets the marks follow
+   the spec exactly — 2px strokes, 4px rounded ends anchored to the baseline,
+   a 2px surface gap between adjacent fills, recessive grid and axes, selective
+   direct labels, and a hover layer on every plotted form.
+
+   One axis per chart, always. Two measures of different scale are two charts
+   sharing a time axis, never two y-scales in one frame.
+   ========================================================================== */
+
+const SVG_NS = "http://www.w3.org/2000/svg";
+const GAP = 2;          // surface gap between adjacent fills
+const END_R = 4;        // rounded data-end radius
+
+function el(name, attrs = {}, parent = null) {
+  const node = document.createElementNS(SVG_NS, name);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v !== null && v !== undefined) node.setAttribute(k, String(v));
+  }
+  if (parent) parent.appendChild(node);
+  return node;
+}
+
+function svgRoot(host, width, height) {
+  host.innerHTML = "";
+  const svg = el("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    preserveAspectRatio: "xMidYMid meet",
+    role: "img",
+  }, host);
+  return svg;
+}
+
+function tooltip(host) {
+  const tip = document.createElement("div");
+  tip.className = "tip";
+  host.appendChild(tip);
+  return {
+    show(html, x, y) {
+      tip.innerHTML = html;
+      tip.classList.add("is-on");
+      const box = host.getBoundingClientRect();
+      const w = tip.offsetWidth, h = tip.offsetHeight;
+      let left = x + 12, top = y - h - 10;
+      if (left + w > box.width) left = x - w - 12;
+      if (top < 0) top = y + 14;
+      tip.style.left = Math.max(0, left) + "px";
+      tip.style.top = Math.max(0, top) + "px";
+    },
+    hide() { tip.classList.remove("is-on"); },
+  };
+}
+
+/** Bar path with the rounded corners only on the value end. */
+function barPathH(x0, x1, y, h, r) {
+  const forward = x1 >= x0;
+  const radius = Math.min(r, Math.abs(x1 - x0), h / 2);
+  if (radius <= 0.5) return `M${x0},${y}H${x1}V${y + h}H${x0}Z`;
+  return forward
+    ? `M${x0},${y}H${x1 - radius}A${radius},${radius} 0 0 1 ${x1},${y + radius}`
+      + `V${y + h - radius}A${radius},${radius} 0 0 1 ${x1 - radius},${y + h}H${x0}Z`
+    : `M${x0},${y}H${x1 + radius}A${radius},${radius} 0 0 0 ${x1},${y + radius}`
+      + `V${y + h - radius}A${radius},${radius} 0 0 0 ${x1 + radius},${y + h}H${x0}Z`;
+}
+
+function barPathV(x, w, y0, y1, r) {
+  const up = y1 <= y0;
+  const radius = Math.min(r, Math.abs(y1 - y0), w / 2);
+  if (radius <= 0.5) return `M${x},${y0}V${y1}H${x + w}V${y0}Z`;
+  return up
+    ? `M${x},${y0}V${y1 + radius}A${radius},${radius} 0 0 1 ${x + radius},${y1}`
+      + `H${x + w - radius}A${radius},${radius} 0 0 1 ${x + w},${y1 + radius}V${y0}Z`
+    : `M${x},${y0}V${y1 - radius}A${radius},${radius} 0 0 0 ${x + radius},${y1}`
+      + `H${x + w - radius}A${radius},${radius} 0 0 0 ${x + w},${y1 - radius}V${y0}Z`;
+}
+
+function niceTicks(min, max, count = 4) {
+  if (min === max) { min -= 1; max += 1; }
+  const raw = (max - min) / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(Math.abs(raw) || 1)));
+  const norm = raw / mag;
+  const step = (norm >= 7.5 ? 10 : norm >= 3 ? 5 : norm >= 1.5 ? 2 : 1) * mag;
+  const ticks = [];
+  for (let t = Math.ceil(min / step) * step; t <= max + step * 0.001; t += step) {
+    ticks.push(Number(t.toFixed(10)));
+  }
+  return ticks;
+}
+
+function emptyState(host, title, detail) {
+  host.innerHTML = `<div class="empty"><b>${title}</b>${detail || ""}</div>`;
+}
+
+/* ---------------------------------------------------------- horizontal bar --
+   Magnitude with identity. Sorted descending so rank is read by position, and
+   colour is a single hue — a second hue here would imply a distinction that
+   does not exist. */
+function barChartH(host, rows, opts = {}) {
+  if (!rows || !rows.length) return emptyState(host, "Nothing to show", opts.emptyNote || "");
+
+  const fmt = opts.format || (v => v.toFixed(2));
+  const data = rows.slice().sort((a, b) => b.value - a.value).slice(0, opts.limit || 8);
+  // The label gutter is sized by the caller, because how much room a name
+  // needs is a property of the data, not of the chart.
+  const gutter = opts.labelWidth || 104;
+  // Reserve exactly enough on the right for the longest value, so a label is
+  // never forced inside a bar - text on a saturated fill cannot reach 4.5:1
+  // against every palette step, and shrinking the bar is the cheaper trade.
+  const valueGutter = Math.max(48,
+    Math.max(...data.map(d => fmt(d.value).length)) * 6.4 + 14);
+  const rowH = 30, pad = { t: 6, r: valueGutter, b: 6, l: gutter };
+  const width = 640;
+  const height = pad.t + pad.b + data.length * rowH;
+  const plotW = width - pad.l - pad.r;
+  const max = Math.max(...data.map(d => d.value), 0) || 1;
+
+  const svg = svgRoot(host, width, height);
+  const tip = tooltip(host);
+
+  data.forEach((d, i) => {
+    const y = pad.t + i * rowH;
+    const barH = rowH - GAP * 3;
+    const w = Math.max(2, (d.value / max) * plotW);
+
+    const maxChars = Math.max(6, Math.floor((gutter - 14) / 6.4));
+    el("text", { x: pad.l - 10, y: y + barH / 2 + 4, "text-anchor": "end", class: "lbl" }, svg)
+      .textContent = d.label.length > maxChars
+        ? d.label.slice(0, maxChars - 1) + "…" : d.label;
+
+    el("path", {
+      d: barPathH(pad.l, pad.l + w, y + GAP, barH, END_R),
+      fill: d.color || "var(--series-1)",
+    }, svg);
+
+    el("text", { x: pad.l + w + 8, y: y + barH / 2 + 4, class: "val" }, svg)
+      .textContent = fmt(d.value);
+
+    const hit = el("rect", { x: 0, y, width, height: rowH, class: "hit" }, svg);
+    hit.addEventListener("mousemove", ev => {
+      const b = host.getBoundingClientRect();
+      tip.show(
+        `<div class="tip-h">${d.label}</div>` +
+        (d.detail || []).map(([k, v]) => `<div class="tip-r"><span>${k}</span><b>${v}</b></div>`).join("") ||
+        `<div class="tip-r"><span>Value</span><b>${fmt(d.value)}</b></div>`,
+        ev.clientX - b.left, ev.clientY - b.top);
+    });
+    hit.addEventListener("mouseleave", () => tip.hide());
+  });
+  return svg;
+}
+
+/* ----------------------------------------------------------- diverging bar --
+   Polarity. Two hues either side of a neutral zero line, with the sign carried
+   in the label as well as the colour. */
+function divergingBarH(host, rows, opts = {}) {
+  if (!rows || !rows.length) return emptyState(host, "Nothing to show", opts.emptyNote || "");
+
+  const fmt = opts.format || (v => (v >= 0 ? "+" : "") + v.toFixed(2));
+  const data = rows.slice().sort((a, b) => b.value - a.value).slice(0, opts.limit || 8);
+  const rowH = 30, pad = { t: 6, r: 76, b: 6, l: 92 };
+  const width = 560;
+  const height = pad.t + pad.b + data.length * rowH;
+  const plotW = width - pad.l - pad.r;
+  const span = Math.max(...data.map(d => Math.abs(d.value)), 1);
+  const zero = pad.l + plotW / 2;
+  // Same reasoning as the magnitude bars: leave room for the value so it can
+  // always sit outside the fill.
+  const labelRoom = Math.max(...data.map(d => fmt(d.value).length)) * 6.4 + 12;
+  const scale = Math.max(1, (plotW / 2) - labelRoom) / span;
+
+  const svg = svgRoot(host, width, height);
+  const tip = tooltip(host);
+
+  el("line", { x1: zero, y1: pad.t, x2: zero, y2: height - pad.b, class: "axisline" }, svg);
+
+  data.forEach((d, i) => {
+    const y = pad.t + i * rowH;
+    const barH = rowH - GAP * 3;
+    const len = Math.max(2, Math.abs(d.value) * scale);
+    const x1 = d.value >= 0 ? zero + len : zero - len;
+
+    el("text", { x: pad.l - 10, y: y + barH / 2 + 4, "text-anchor": "end", class: "lbl" }, svg)
+      .textContent = d.label.length > 12 ? d.label.slice(0, 11) + "…" : d.label;
+
+    el("path", {
+      d: barPathH(zero, x1, y + GAP, barH, END_R),
+      fill: d.value >= 0 ? "var(--div-pos)" : "var(--div-neg)",
+    }, svg);
+
+    const anchor = d.value >= 0 ? "start" : "end";
+    const tx = d.value >= 0 ? x1 + 8 : x1 - 8;
+    el("text", { x: tx, y: y + barH / 2 + 4, "text-anchor": anchor, class: "val" }, svg)
+      .textContent = fmt(d.value);
+
+    const hit = el("rect", { x: 0, y, width, height: rowH, class: "hit" }, svg);
+    hit.addEventListener("mousemove", ev => {
+      const b = host.getBoundingClientRect();
+      tip.show(`<div class="tip-h">${d.label}</div>` +
+        (d.detail || [["P&L", fmt(d.value)]])
+          .map(([k, v]) => `<div class="tip-r"><span>${k}</span><b>${v}</b></div>`).join(""),
+        ev.clientX - b.left, ev.clientY - b.top);
+    });
+    hit.addEventListener("mouseleave", () => tip.hide());
+  });
+  return svg;
+}
+
+/* ------------------------------------------------------------- line / area --
+   Change over time. A crosshair plus tooltip is standard, not an extra. */
+function lineChart(host, values, opts = {}) {
+  if (!values || values.length < 2) return emptyState(host, "Not enough data", opts.emptyNote || "");
+
+  const fmt = opts.format || (v => v.toFixed(2));
+  const width = 900, height = opts.height || 240;
+  const pad = { t: 12, r: 16, b: 24, l: 64 };
+  const plotW = width - pad.l - pad.r, plotH = height - pad.t - pad.b;
+
+  let min = Math.min(...values), max = Math.max(...values);
+  if (opts.zeroFloor) { max = Math.max(max, 0); min = Math.min(min, 0); }
+  const ticks = niceTicks(min, max, 4);
+  const lo = Math.min(min, ticks[0]), hi = Math.max(max, ticks[ticks.length - 1]);
+  const range = hi - lo || 1;
+
+  const X = i => pad.l + (i / (values.length - 1)) * plotW;
+  const Y = v => pad.t + plotH - ((v - lo) / range) * plotH;
+
+  const svg = svgRoot(host, width, height);
+  const tip = tooltip(host);
+
+  ticks.forEach(t => {
+    const y = Y(t);
+    el("line", { x1: pad.l, y1: y, x2: width - pad.r, y2: y, class: "gridline" }, svg);
+    el("text", { x: pad.l - 10, y: y + 3.5, "text-anchor": "end", class: "tick" }, svg)
+      .textContent = opts.tickFormat ? opts.tickFormat(t) : fmt(t);
+  });
+
+  const line = values.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+
+  if (opts.fill !== false) {
+    const base = Y(opts.baseline !== undefined ? opts.baseline : lo);
+    const grad = el("linearGradient", { id: "g-" + Math.random().toString(36).slice(2, 8), x1: 0, y1: 0, x2: 0, y2: 1 },
+      el("defs", {}, svg));
+    el("stop", { offset: "0%", "stop-color": opts.color || "var(--series-1)", "stop-opacity": .22 }, grad);
+    el("stop", { offset: "100%", "stop-color": opts.color || "var(--series-1)", "stop-opacity": 0 }, grad);
+    el("path", { d: `${line}L${X(values.length - 1)},${base}L${X(0)},${base}Z`, fill: `url(#${grad.id})` }, svg);
+  }
+
+  el("path", { d: line, class: "series-line", stroke: opts.color || "var(--series-1)" }, svg);
+
+  if (opts.baseline !== undefined) {
+    el("line", {
+      x1: pad.l, y1: Y(opts.baseline), x2: width - pad.r, y2: Y(opts.baseline),
+      class: "axisline", "stroke-dasharray": "3 3",
+    }, svg);
+  }
+
+  // Emphasised endpoint — the value a reader looks for first.
+  const lastX = X(values.length - 1), lastY = Y(values[values.length - 1]);
+  el("circle", { cx: lastX, cy: lastY, r: 4.5, fill: opts.color || "var(--series-1)",
+                 stroke: "var(--surface-1)", "stroke-width": 2 }, svg);
+
+  const cross = el("line", { x1: 0, y1: pad.t, x2: 0, y2: pad.t + plotH,
+                             class: "axisline", opacity: 0 }, svg);
+  const dot = el("circle", { r: 4, fill: opts.color || "var(--series-1)",
+                             stroke: "var(--surface-1)", "stroke-width": 2, opacity: 0 }, svg);
+
+  const hit = el("rect", { x: pad.l, y: pad.t, width: plotW, height: plotH, class: "hit" }, svg);
+  hit.addEventListener("mousemove", ev => {
+    const b = host.getBoundingClientRect();
+    const rel = (ev.clientX - b.left) / b.width * width;
+    const i = Math.max(0, Math.min(values.length - 1,
+      Math.round(((rel - pad.l) / plotW) * (values.length - 1))));
+    cross.setAttribute("x1", X(i)); cross.setAttribute("x2", X(i)); cross.setAttribute("opacity", 1);
+    dot.setAttribute("cx", X(i)); dot.setAttribute("cy", Y(values[i])); dot.setAttribute("opacity", 1);
+    tip.show(
+      `<div class="tip-h">${opts.xLabel ? opts.xLabel(i) : "Bar " + (i + 1)}</div>` +
+      `<div class="tip-r"><span>${opts.seriesName || "Value"}</span><b>${fmt(values[i])}</b></div>`,
+      ev.clientX - b.left, ev.clientY - b.top);
+  });
+  hit.addEventListener("mouseleave", () => {
+    cross.setAttribute("opacity", 0); dot.setAttribute("opacity", 0); tip.hide();
+  });
+  return svg;
+}
+
+/* ------------------------------------------------------------ column chart --
+   Sequence of discrete outcomes; diverging around zero. */
+function columnChart(host, values, opts = {}) {
+  if (!values || !values.length) return emptyState(host, "No trades", opts.emptyNote || "");
+
+  const fmt = opts.format || (v => (v >= 0 ? "+" : "") + v.toFixed(0));
+  const width = 560, height = opts.height || 200;
+  const pad = { t: 12, r: 12, b: 22, l: 60 };
+  const plotW = width - pad.l - pad.r, plotH = height - pad.t - pad.b;
+  const span = Math.max(...values.map(Math.abs), 1);
+  const ticks = niceTicks(-span, span, 2);
+  const Y = v => pad.t + plotH / 2 - (v / span) * (plotH / 2);
+  const slot = plotW / values.length;
+  const barW = Math.max(3, Math.min(26, slot - GAP * 2));
+
+  const svg = svgRoot(host, width, height);
+  const tip = tooltip(host);
+
+  ticks.forEach(t => {
+    const y = Y(t);
+    el("line", { x1: pad.l, y1: y, x2: width - pad.r, y2: y,
+                 class: t === 0 ? "axisline" : "gridline" }, svg);
+    el("text", { x: pad.l - 8, y: y + 3.5, "text-anchor": "end", class: "tick" }, svg)
+      .textContent = fmt(t);
+  });
+
+  values.forEach((v, i) => {
+    const x = pad.l + i * slot + (slot - barW) / 2;
+    el("path", {
+      d: barPathV(x, barW, Y(0), Y(v), END_R),
+      fill: v >= 0 ? "var(--div-pos)" : "var(--div-neg)",
+    }, svg);
+
+    const hit = el("rect", { x: pad.l + i * slot, y: pad.t, width: slot, height: plotH, class: "hit" }, svg);
+    hit.addEventListener("mousemove", ev => {
+      const b = host.getBoundingClientRect();
+      tip.show(`<div class="tip-h">Trade ${i + 1}</div>` +
+        (opts.detail ? opts.detail(i) : `<div class="tip-r"><span>Net P&L</span><b>${fmt(v)}</b></div>`),
+        ev.clientX - b.left, ev.clientY - b.top);
+    });
+    hit.addEventListener("mouseleave", () => tip.hide());
+  });
+  return svg;
+}
+</script>
+<script>
+"use strict";
+
+const API = "/api/v1";
+const state = { token: localStorage.getItem("admin_token"), audit: [], tenants: [],
+                stats: null, sort: {} };
+
+/* ----------------------------------------------------------------- format -- */
+
+const inr = new Intl.NumberFormat("en-IN");
+const esc = t => String(t ?? "").replace(/[&<>"']/g, c =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let toastTimer = null;
+function toast(msg, kind = "") {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.className = "toast is-on " + kind;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("is-on"), 4000);
+}
+
+function noteInto(id, msg, kind = "bad") {
+  const h = document.getElementById(id);
+  if (h) h.innerHTML = msg ? `<div class="note ${kind}">${esc(msg)}</div>` : "";
+}
+
+/* ------------------------------------------------------- theme & sorting -- */
+
+function applyPrefs() {
+  const theme = localStorage.getItem("theme");
+  if (theme) document.documentElement.setAttribute("data-theme", theme);
+  else document.documentElement.removeAttribute("data-theme");
+}
+
+function currentTheme() {
+  return localStorage.getItem("theme")
+    || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+}
+
+function toggleTheme() {
+  localStorage.setItem("theme", currentTheme() === "dark" ? "light" : "dark");
+  applyPrefs();
+  if (state.stats) renderCharts();     // charts read CSS variables
+}
+
+function sortable(tableId, key, render) {
+  const table = document.getElementById(tableId);
+  if (!table || table.dataset.sortReady) return;
+  table.dataset.sortReady = "1";
+  table.querySelectorAll("thead th[data-key]").forEach(th => {
+    th.classList.add("sortable");
+    th.setAttribute("tabindex", "0");
+    const go = () => {
+      const cur = state.sort[key];
+      const dir = cur && cur.k === th.dataset.key && cur.d === "desc" ? "asc" : "desc";
+      state.sort[key] = { k: th.dataset.key, d: dir };
+      table.querySelectorAll("thead th").forEach(o => o.removeAttribute("aria-sort"));
+      th.setAttribute("aria-sort", dir === "desc" ? "descending" : "ascending");
+      render();
+    };
+    th.addEventListener("click", go);
+    th.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); }
+    });
+  });
+}
+
+function applySort(rows, key, fallback) {
+  const s = state.sort[key] || fallback;
+  if (!s) return rows;
+  const dir = s.d === "asc" ? 1 : -1;
+  return rows.slice().sort((a, b) => {
+    const x = a[s.k], y = b[s.k];
+    if (x === y) return 0;
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * dir;
+  });
+}
+
+/* -------------------------------------------------------------------- api -- */
+
+async function api(path) {
+  const res = await fetch(API + path, { headers: { Authorization: `Bearer ${state.token}` } });
+  let payload = null;
+  try { payload = await res.json(); } catch (e) { payload = null; }
+  if (!res.ok) {
+    const msg = typeof payload?.detail === "string" ? payload.detail
+      : `Request failed (HTTP ${res.status})`;
+    const err = new Error(msg); err.status = res.status; throw err;
+  }
+  return payload;
+}
+
+async function signIn(ev) {
+  ev.preventDefault();
+  noteInto("login-error", "");
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: document.getElementById("email").value,
+        password: document.getElementById("password").value }) });
+    const payload = await res.json();
+    if (!res.ok) throw new Error(payload.detail || "Sign in failed");
+    if (payload.role !== "admin") {
+      throw new Error("This account does not have the admin role.");
+    }
+    state.token = payload.access_token;
+    localStorage.setItem("admin_token", state.token);
+    document.getElementById("auth-scrim").classList.remove("is-open");
+    await loadAll();
+  } catch (e) { noteInto("login-error", e.message); }
+}
+
+function signOut() {
+  state.token = null;
+  localStorage.removeItem("admin_token");
+  document.getElementById("auth-scrim").classList.add("is-open");
+}
+
+/* ------------------------------------------------------------------ views -- */
+
+function tile(label, value, foot, tone) {
+  return `<div class="card tile">
+    <div class="eyebrow">${esc(label)}</div>
+    <div class="tile-top"><span class="tile-val"${tone ? ` style="color:${tone}"` : ""}>${esc(value)}</span></div>
+    <div class="tile-foot">${foot || ""}</div>
+  </div>`;
+}
+
+async function loadAll() {
+  noteInto("page-error", "");
+  try {
+    const [stats, tenants, audit] = await Promise.all([
+      api("/admin/stats"), api("/admin/tenants"), api("/admin/audit?limit=200"),
+    ]);
+    state.stats = stats; state.tenants = tenants; state.audit = audit;
+
+    const live = !String(stats.choice_environment).toUpperCase().startsWith("UAT");
+    const chip = document.getElementById("env-chip");
+    chip.className = "chip " + (live ? "is-live" : "is-paper");
+    document.getElementById("env-text").textContent =
+      `${stats.choice_environment} · ${live ? "real orders" : "sandbox"}`;
+
+    const rejected = (stats.orders_by_status || {}).REJECTED || 0;
+    const rejectRate = stats.total_orders ? (rejected / stats.total_orders) * 100 : 0;
+
+    document.getElementById("kpis").innerHTML = [
+      tile("Tenants", inr.format(stats.total_tenants),
+           `${inr.format(stats.total_users)} users`),
+      tile("Strategies", inr.format(stats.total_strategies),
+           `${inr.format(stats.total_runs)} runs recorded`),
+      tile("Orders", inr.format(stats.total_orders),
+           `${rejectRate.toFixed(0)}% rejected`,
+           rejectRate > 20 ? "var(--down)" : null),
+      tile("Broker sessions", inr.format(stats.connected_choice_sessions),
+           `${stats.live_choice_sessions} live · limit ${stats.order_rate_limit_per_sec}/s`,
+           stats.live_choice_sessions > 0 ? "var(--down)" : null),
+    ].join("");
+
+    renderCharts();
+    sortable("tbl-tenants", "tenants", renderTenants);
+    renderTenants();
+    loadCompliance();
+
+    const actions = [...new Set(audit.map(a => a.action))].sort();
+    const filter = document.getElementById("action-filter");
+    const chosen = filter.value;
+    filter.innerHTML = `<option value="">All actions</option>` +
+      actions.map(a => `<option value="${esc(a)}"${a === chosen ? " selected" : ""}>${esc(a)}</option>`).join("");
+    renderAudit();
+  } catch (e) {
+    if (e.status === 401) { signOut(); return; }
+    noteInto("page-error", e.message);
+  }
+}
+
+/** ORDER_PLACED -> "Order placed". Readable, and it stops long action names
+ *  truncating in the chart's label gutter. */
+function humanise(action) {
+  const words = String(action).toLowerCase().split("_");
+  return words[0].charAt(0).toUpperCase() + words[0].slice(1) +
+    (words.length > 1 ? " " + words.slice(1).join(" ") : "");
+}
+
+function renderCharts() {
+  const counts = {};
+  state.audit.forEach(a => { counts[a.action] = (counts[a.action] || 0) + 1; });
+  barChartH(document.getElementById("chart-actions"),
+    Object.entries(counts).map(([action, value]) => ({
+      label: humanise(action), value,
+      detail: [["Events", inr.format(value)], ["Action", action]],
+    })),
+    { format: v => inr.format(v), limit: 8, labelWidth: 150,
+      emptyNote: "Activity appears here once the platform is used." });
+
+  // Counts per outcome — one measure, several categories. Colour carries the
+  // state (reserved status palette), and every bar is labelled, so the meaning
+  // never rests on hue alone.
+  const byStatus = (state.stats && state.stats.orders_by_status) || {};
+  const total = Object.values(byStatus).reduce((a, b) => a + b, 0);
+  const tone = { REJECTED: "var(--down)", ACCEPTED: "var(--up)", SIMULATED: "var(--info)" };
+  barChartH(document.getElementById("chart-orders"),
+    Object.entries(byStatus).map(([status, count]) => ({
+      label: humanise(status), value: count,
+      color: tone[status] || "var(--ink-3)",
+      detail: [["Orders", inr.format(count)],
+               ["Share", total ? ((count / total) * 100).toFixed(1) + "%" : "—"]],
+    })),
+    { format: v => inr.format(v), labelWidth: 110,
+      emptyNote: "No orders submitted yet." });
+}
+
+function renderTenants() {
+  const rows = applySort(state.tenants, "tenants", { k: "user_count", d: "desc" });
+  document.getElementById("tenant-count").textContent =
+    rows.length ? `${rows.length} organisations` : "";
+  document.getElementById("tenant-body").innerHTML = rows.length ? rows.map(t => `
+    <tr><td class="sym">${esc(t.name)}${t.connected_sessions
+          ? `<div class="sub">${t.connected_sessions} connected</div>` : ""}</td>
+      <td><span class="tag">${esc(t.plan)}</span></td>
+      <td class="num">${inr.format(t.user_count)}</td>
+      <td class="num">${inr.format(t.strategy_count)}</td>
+      <td class="num">${inr.format(t.order_count || 0)}</td>
+      <td class="num" title="Live sessions only — paper fills are not persisted"
+        style="color:${(t.paper_pnl || 0) > 0 ? "var(--up)" : (t.paper_pnl || 0) < 0 ? "var(--down)" : ""}">
+        ${t.paper_pnl ? "₹" + inr.format(t.paper_pnl) : "—"}</td>
+      <td class="num sub">${t.last_activity
+        ? esc(new Date(t.last_activity).toLocaleString("en-IN")) : "never"}</td>
+      <td class="num"><button class="btn btn-sm btn-danger"
+        onclick="haltTenant('${esc(t.id)}','${esc(t.name)}')">Halt</button></td>
+    </tr>`).join("")
+    : `<tr><td colspan="8"><div class="empty"><b>No tenants</b>Organisations appear as accounts are created.</div></td></tr>`;
+}
+
+/* Stop a whole desk trading. The confirmation spells out the blast radius,
+   because this is the control an administrator reaches for under pressure. */
+async function haltTenant(id, name) {
+  const message = [
+    `Halt all trading for ${name}?`,
+    "",
+    "• Every account in this tenant stops accepting orders for the rest of today",
+    "• Working orders are cancelled where a session is connected",
+    "",
+    "This cannot be undone from the app.",
+  ].join("\n");
+  if (!confirm(message)) return;
+  try {
+    const r = await api(`/admin/tenants/${id}/halt`, { method: "POST", body: "{}" });
+    toast(`${name} halted — ${r.accounts_halted} account(s), `
+          + `${r.orders_cancelled} order(s) cancelled`,
+          (r.failures || []).length ? "bad" : "ok");
+    await loadAll();
+  } catch (e) { toast(e.message, "bad"); }
+}
+
+/* The regulatory blockers as a checklist. Items that cannot be verified from
+   configuration report "unknown" rather than a tick nobody earned. */
+async function loadCompliance() {
+  const host = document.getElementById("compliance-body");
+  if (!host) return;
+  try {
+    const r = await api("/admin/compliance");
+    const chip = { passing: ["ok", "Pass"], failing: ["bad", "Blocked"],
+                   unknown: ["warn", "Unverified"],
+                   not_applicable: ["", "N/A"] };
+    host.innerHTML = `
+      <p class="card-sub">Environment: <b>${esc(r.environment)}</b></p>
+      <table class="mini">${(r.items || []).map(i => {
+        const c = chip[i.status] || ["", i.status];
+        return `<tr><td><b>${esc(i.id)}</b> ${esc(i.label)}
+            <div class="sub">${esc(i.detail)}</div></td>
+          <td class="num"><span class="tag ${c[0]}">${esc(c[1])}</span></td></tr>`;
+      }).join("")}</table>`;
+  } catch (e) {
+    host.innerHTML = `<div class="note bad">${esc(e.message)}</div>`;
+  }
+}
+
+function renderAudit() {
+  const chosen = document.getElementById("action-filter").value;
+  const rows = chosen ? state.audit.filter(a => a.action === chosen) : state.audit;
+  document.getElementById("audit-body").innerHTML = rows.length ? rows.map(a => {
+    const bad = /REJECT|FAIL/.test(a.action);
+    const risky = /LIVE|ROLE_CHANGED/.test(a.action);
+    return `<tr>
+      <td class="sub">${esc(new Date(a.created_at + "Z").toLocaleString("en-IN"))}</td>
+      <td><span class="tag ${bad ? "bad" : risky ? "warn" : ""}">${esc(a.action)}</span></td>
+      <td class="sub">${esc(a.entity_type)}</td>
+      <td class="sub">${esc((a.actor_id || "").slice(0, 8))}</td>
+      <td class="sub">${esc(JSON.stringify(a.details || {}).slice(0, 120))}</td>
+    </tr>`;
+  }).join("")
+    : `<tr><td colspan="5"><div class="empty"><b>Nothing recorded</b>${
+        chosen ? "No events for this action." : "Activity appears here as the platform is used."
+      }</div></td></tr>`;
+}
+
+/* ------------------------------------------------------------------ start -- */
+
+applyPrefs();
+window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+  if (!localStorage.getItem("theme")) { applyPrefs(); if (state.stats) renderCharts(); }
+});
+
+if (state.token) {
+  document.getElementById("auth-scrim").classList.remove("is-open");
+  loadAll();
+}
+</script>
+</body>
+</html>

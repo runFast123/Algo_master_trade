@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licences · Choice FINX</title>
+<style>
+/* Same neutral ramp as the trading terminal: chrome is monochrome, colour is
+   reserved for state. There is exactly one thing here worth a colour — an
+   installation that has gone quiet. */
+:root {
+  color-scheme: dark;
+  --plane: #08090b; --surface-1: #101216; --surface-2: #171a1f; --surface-3: #1e2229;
+  --hairline: #23272e; --hairline-str: #2f343d;
+  --ink-1: #f4f5f7; --ink-2: #a8adb8; --ink-3: #6d737f;
+  --up: #17c217; --down-accent: #ff7f82; --warn-accent: #ffc247; --info: #6fabf2;
+  --radius: 10px; --radius-sm: 6px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --plane: #f7f7f5; --surface-1: #ffffff; --surface-2: #f2f2ef; --surface-3: #e8e8e4;
+    --hairline: #e2e2dd; --hairline-str: #d3d3cf;
+    --ink-1: #16171a; --ink-2: #4a4d55; --ink-3: #75787f;
+    --up: #056b05; --down-accent: #ad2126; --warn-accent: #7d4f00; --info: #17538f;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--plane); color: var(--ink-1); min-height: 100vh;
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 1.5rem;
+}
+h1 { font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.lede { color: var(--ink-3); font-size: 12.5px; margin-top: .2rem; }
+header { display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+.spacer { flex: 1; }
+
+.card { background: var(--surface-1); border: 1px solid var(--hairline);
+        border-radius: var(--radius); margin-bottom: .9rem; overflow: hidden; }
+.card-head { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap;
+             padding: .7rem 1rem; border-bottom: 1px solid var(--hairline); }
+.card-title { font-size: 13.5px; font-weight: 650; }
+.card-sub { font-size: 11.5px; color: var(--ink-3); }
+.card-body { padding: 1rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; font-size: 10.5px; text-transform: uppercase;
+     letter-spacing: .07em; color: var(--ink-3); font-weight: 600;
+     padding: .5rem 1rem; border-bottom: 1px solid var(--hairline); }
+td { padding: .5rem 1rem; border-bottom: 1px solid var(--hairline); }
+tr:last-child td { border-bottom: 0; }
+.tnum { font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 11.5px; }
+
+.tag { display: inline-block; padding: .12rem .4rem; border-radius: 4px;
+       font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+       border: 1px solid var(--hairline-str); color: var(--ink-2); background: var(--surface-2); }
+.tag.live { color: var(--up); border-color: rgba(23,194,23,.3); background: rgba(23,194,23,.12); }
+.tag.bad  { color: var(--down-accent); border-color: rgba(255,127,130,.3); background: rgba(255,127,130,.12); }
+.tag.warn { color: var(--warn-accent); border-color: rgba(255,194,71,.3); background: rgba(255,194,71,.12); }
+
+button, input {
+  font: inherit; color: inherit; background: var(--surface-2);
+  border: 1px solid var(--hairline-str); border-radius: var(--radius-sm);
+  padding: .4rem .7rem;
+}
+button { cursor: pointer; font-size: 12.5px; font-weight: 600; }
+button:hover { background: var(--surface-3); }
+button.primary { background: var(--info); border-color: var(--info); color: #fff; }
+button.danger:hover { color: var(--down-accent); border-color: var(--down-accent); }
+:focus-visible { outline: 2px solid var(--info); outline-offset: 2px; }
+
+.row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.empty { color: var(--ink-3); font-size: 12.5px; padding: 1rem; text-align: center; }
+.note.bad { border-color: var(--down-accent); color: var(--down-accent); }
+.note.ok { border-color: var(--up); color: var(--up); }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 11.5px;
+       background: var(--surface-3); padding: .05rem .3rem; border-radius: 4px; }
+.note { font-size: 12px; padding: .6rem .8rem; border-radius: var(--radius-sm);
+        border: 1px solid var(--hairline-str); background: var(--surface-2);
+        color: var(--ink-2); margin-bottom: .9rem; }
+.keyline { font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+           background: var(--surface-3); padding: .5rem .7rem; border-radius: var(--radius-sm);
+           margin-top: .5rem; user-select: all; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Licences</h1>
+    <p class="lede">Who may run the platform, and which installations are alive.</p>
+  </div>
+  <div class="spacer"></div>
+  <div class="row">
+    <input id="token" type="password" placeholder="Operator token" style="width:16rem">
+    <button class="primary" onclick="load()">Load</button>
+  </div>
+</header>
+
+<div class="note" id="say" style="display:none"></div>
+
+<div class="note">
+  Start by entering your operator token, top right — it is the
+  <code>LICENCE_ADMIN_TOKEN</code> set on the server. Nothing loads without it.
+  This service records installations, not trading: no positions, no P&amp;L, no
+  strategies, no credentials ever reach it.
+</div>
+
+<div class="card">
+  <div class="card-head">
+    <div class="card-title">Issue a licence</div>
+    <div class="card-sub">One key per client. A seat limit is optional.</div>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <input id="client" placeholder="Client name, e.g. Acme Capital" style="width:16rem">
+      <input id="seats" type="number" min="1" placeholder="Seats (blank = any)" style="width:11rem">
+      <button onclick="issue()">Issue key</button>
+    </div>
+    <div id="issued"></div>
+  </div>
+</div>
+
+<div id="list"></div>
+
+<script>
+"use strict";
+
+const esc = t => String(t ?? "").replace(/[&<>"']/g,
+  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function token() { return document.getElementById("token").value.trim(); }
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { "Content-Type": "application/json",
+               "Authorization": "Bearer " + token(), ...(options.headers || {}) },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.detail || `Request failed (${res.status})`);
+  return body;
+}
+
+function needToken() {
+  if (token()) return false;
+  // Say what to do, not what the server said. "Not authorised" is true and
+  // useless: the token box is empty and nothing on screen said it had to be
+  // filled in first.
+  say("Enter your operator token in the box at the top right, then try again.", true);
+  document.getElementById("token").focus();
+  return true;
+}
+
+function say(message, bad) {
+  const box = document.getElementById("say");
+  box.textContent = message || "";
+  box.className = message ? (bad ? "note bad" : "note ok") : "";
+  box.style.display = message ? "" : "none";
+}
+
+async function issue() {
+  say("");
+  if (needToken()) return;
+  const name = document.getElementById("client").value.trim();
+  if (!name) {
+    say("Give the client a name first — it is how you will recognise them here.", true);
+    document.getElementById("client").focus();
+    return;
+  }
+  const seats = parseInt(document.getElementById("seats").value, 10);
+  try {
+    const made = await api("/api/licences", { method: "POST", body: JSON.stringify({
+      client_name: name, max_installs: Number.isFinite(seats) ? seats : null }) });
+    // Shown once, prominently: this is the string the client needs, and there
+    // is no point making the operator dig it out of a table afterwards.
+    document.getElementById("issued").innerHTML =
+      `<div class="keyline">${esc(made.key)}</div>
+       <p class="card-sub" style="margin-top:.4rem">Send this to ${esc(name)}.</p>`;
+    document.getElementById("client").value = "";
+    document.getElementById("seats").value = "";
+    load();
+  } catch (e) { say(e.message, true); }
+}
+
+async function revoke(key, name) {
+  if (!confirm(`Withdraw the licence for ${name}?\n\n`
+    + `Their copy stops at its next check-in, or within the grace period `
+    + `if it is offline. Open positions are unaffected — those live at the broker.`)) return;
+  try { await api(`/api/licences/${encodeURIComponent(key)}/revoke`, { method: "POST" }); load(); }
+  catch (e) { say(e.message, true); }
+}
+
+async function restore(key) {
+  try { await api(`/api/licences/${encodeURIComponent(key)}/restore`, { method: "POST" }); load(); }
+  catch (e) { say(e.message, true); }
+}
+
+function ago(iso) {
+  const seconds = (Date.now() - new Date(iso + "Z").getTime()) / 1000;
+  if (seconds < 90) return "just now";
+  if (seconds < 5400) return Math.round(seconds / 60) + "m ago";
+  if (seconds < 172800) return Math.round(seconds / 3600) + "h ago";
+  return Math.round(seconds / 86400) + "d ago";
+}
+
+async function load() {
+  const host = document.getElementById("list");
+  if (!token()) {
+    host.innerHTML = `<div class="card"><div class="empty">
+      Enter your operator token above to see licences and installations.</div></div>`;
+    return;
+  }
+  try {
+    const data = await api("/api/licences");
+    localStorage.setItem("operatorToken", token());
+    if (!data.licences.length) {
+      host.innerHTML = `<div class="card"><div class="empty">No licences issued yet.</div></div>`;
+      return;
+    }
+    const totalInstalls = data.licences.reduce((n, l) => n + l.installs.length, 0);
+    host.innerHTML = `
+      <div class="card"><div class="card-head">
+        <div class="card-title">${data.licences.length} licence${data.licences.length === 1 ? "" : "s"}</div>
+        <div class="card-sub">${totalInstalls} installation${totalInstalls === 1 ? "" : "s"} ·
+          quiet for over ${data.grace_days} days is flagged</div>
+      </div></div>`
+      + data.licences.map(card).join("");
+  } catch (e) {
+    host.innerHTML = `<div class="card"><div class="empty">${esc(e.message)}</div></div>`;
+  }
+}
+
+function card(lic) {
+  const seats = lic.max_installs ? `${lic.installs.length} of ${lic.max_installs} seats`
+                                 : `${lic.installs.length} installed`;
+  return `
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">${esc(lic.client_name)}</div>
+          <div class="card-sub mono">${esc(lic.key)}</div>
+        </div>
+        <div class="spacer"></div>
+        <span class="tag ${lic.revoked ? "bad" : "live"}">${lic.revoked ? "Revoked" : "Active"}</span>
+        <span class="card-sub">${seats}</span>
+        ${lic.revoked
+          ? `<button onclick="restore('${esc(lic.key)}')">Restore</button>`
+          : `<button class="danger" onclick="revoke('${esc(lic.key)}','${esc(lic.client_name)}')">Withdraw</button>`}
+      </div>
+      ${lic.installs.length ? `
+        <table>
+          <thead><tr><th>Installation</th><th>Version</th><th>Server</th>
+            <th>First seen</th><th>Last seen</th></tr></thead>
+          <tbody>${lic.installs.map(i => `
+            <tr>
+              <td>${esc(i.label || "—")}<div class="card-sub mono">${esc(i.install_id)}</div></td>
+              <td class="tnum">${esc(i.app_version || "—")}</td>
+              <td>${i.environment ? `<span class="tag">${esc(i.environment)}</span>` : "—"}</td>
+              <td class="card-sub tnum">${esc(i.first_seen.slice(0, 10))}</td>
+              <td class="tnum">${ago(i.last_seen)}
+                ${i.stale ? `<span class="tag warn" style="margin-left:.3rem">quiet</span>` : ""}</td>
+            </tr>`).join("")}</tbody>
+        </table>`
+        : `<div class="empty">Issued, not yet activated.</div>`}
+    </div>`;
+}
+
+const saved = localStorage.getItem("operatorToken");
+if (saved) { document.getElementById("token").value = saved; load(); }
+</script>
+</body>
+</html>
