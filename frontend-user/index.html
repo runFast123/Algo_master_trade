@@ -33,8 +33,8 @@
 
   --ink-1:        #f4f5f7;
   --ink-2:        #a8adb8;
-  --ink-3:        #6d737f;
-  --ink-4:        #4a4f59;
+  --ink-3:        #7a808c;
+  --ink-4:        #8e94a0;
 
   /* Data — categorical slots, validated against --surface-1 */
   --series-1:     #3987e5;
@@ -95,7 +95,7 @@
     --ink-1:        #101114;
     --ink-2:        #4d5058;
     --ink-3:        #767a83;
-    --ink-4:        #a0a4ac;
+    --ink-4:        #5c6069;
 
     --series-1:     #2a78d6;
     --series-2:     #eb6834;
@@ -137,7 +137,7 @@
   --ink-1:        #101114;
   --ink-2:        #4d5058;
   --ink-3:        #767a83;
-  --ink-4:        #a0a4ac;
+  --ink-4:        #5c6069;
 
   --series-1:     #2a78d6;
   --series-2:     #eb6834;
@@ -318,6 +318,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 720px) {
   .topbar { gap: .6rem; padding: 0 .75rem; }
   .chip { padding: .3rem .45rem; }
+}
+@media (max-width: 480px) {
+  main { padding: .5rem; }
+  .card-head { gap: var(--space-2); padding: var(--space-2) var(--space-3); }
 }
 
 /* ----------------------------------------------------------------- button -- */
@@ -570,7 +574,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border: 1px solid var(--hairline); border-radius: var(--radius-sm);
   padding: .8rem; margin-bottom: .8rem; background: var(--surface-1);
 }
-.rule-head { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: .6rem; }
+.rule-head { display: flex; align-items: flex-start; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .6rem; }
 .rule-head h3 { font-size: 12.5px; font-weight: 650; letter-spacing: .01em; }
 .rule-head .btn { margin-left: auto; flex: none; }
 .rule-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin-top: .15rem; }
@@ -592,16 +596,20 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   color: var(--ink-3); background: var(--surface-1); padding: 0 .3rem;
 }
 [data-join="any"] .cond + .cond::before { content: "or"; color: var(--info-accent); }
-.cond select, .cond input { min-width: 0; }
+.cond select, .cond input {
+  min-width: 0; min-height: 28px; padding: .25rem .45rem;
+  background: var(--plane); border: 1px solid var(--hairline-str);
+  border-radius: var(--radius-sm); font-size: 12px; color: var(--ink-1);
+}
 .cond select { flex: 1 1 8rem; }
 .cond input[type="number"] { flex: 0 1 6rem; }
 .cond .param {
-  flex: 0 0 4.2rem; font-size: 11px;
+  flex: 0 0 4.2rem; font-size: 11.5px;
 }
 .cond .drop {
-  flex: none; padding: .3rem .45rem; line-height: 1; color: var(--ink-3);
+  flex: none; min-height: 28px; min-width: 28px; padding: .25rem .45rem; line-height: 1; color: var(--ink-3);
   background: none; border: 1px solid transparent; border-radius: var(--radius-sm);
-  cursor: pointer;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
 }
 .cond .drop:hover { color: var(--down); border-color: var(--hairline-str); }
 .cond-empty { font-size: 11.5px; color: var(--ink-3); padding: .4rem .2rem; }
@@ -677,6 +685,7 @@ kbd { font: 11px var(--mono); background: var(--surface-3); border: 1px solid va
 .field input, .field select, .field textarea {
   background: var(--plane); border: 1px solid var(--hairline-str);
   border-radius: var(--radius-sm); padding: .5rem .65rem; color: var(--ink-1); font-size: 13px;
+  width: 100%; box-sizing: border-box;
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--series-1); }
 /* Suppress the ring for pointer focus only. This was a bare `outline: none` on
@@ -689,6 +698,10 @@ kbd { font: 11px var(--mono); background: var(--surface-3); border: 1px solid va
 .field textarea:focus:not(:focus-visible) { outline: none; }
 .field textarea { font-family: var(--mono); font-size: 12px; line-height: 1.6; resize: vertical; }
 .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; }
+.field-row > * { min-width: 0; }
+@media (max-width: 380px) {
+  .field-row { grid-template-columns: 1fr; }
+}
 
 .note {
   border: 1px solid var(--hairline-str); background: var(--surface-2);
@@ -1166,7 +1179,7 @@ ul.plain li { margin: .15rem 0; }
           <p class="rule-sub">What the builder produced. Editing here replaces
             the builder above, so anything the builder cannot represent is kept
             rather than silently dropped.</p>
-          <textarea id="s-dsl" rows="14" spellcheck="false" oninput="jsonEdited()"></textarea>
+          <textarea id="s-dsl" rows="14" spellcheck="false" aria-label="Strategy rules in JSON format" oninput="jsonEdited()"></textarea>
           <button class="btn btn-sm" onclick="applyJson()">Apply to builder</button>
           <div class="note" style="margin-top:.6rem"><b>Available</b>
             Indicators: SMA, EMA, RSI, BOLLINGER, MACD, ATR, VWAP, STOCH ·
@@ -1426,8 +1439,8 @@ ul.plain li { margin: .15rem 0; }
 <!-- ============================================================= MODALS == -->
 
 <div class="scrim is-open" id="auth-scrim">
-  <div class="modal">
-    <h2>Choice FINX Algo Terminal</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <h2 id="auth-modal-title">Choice FINX Algo Terminal</h2>
     <p class="lede">Sign in to the platform. Connecting your broker account is a separate step.</p>
     <div class="seg">
       <button aria-selected="true" id="tab-in" onclick="authTab('in')">Sign in</button>
@@ -1454,8 +1467,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="broker-scrim">
-  <div class="modal">
-    <h2>Connect your Choice account</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="broker-modal-title">
+    <h2 id="broker-modal-title">Connect your Choice account</h2>
     <p class="lede">Decide how this session behaves before connecting.</p>
     <form onsubmit="doConnect(event)">
       <div class="field"><label for="c-mode">Mode</label>
@@ -1502,8 +1515,8 @@ ul.plain li { margin: .15rem 0; }
      a bank account Choice already holds — an arbitrary destination is never
      accepted, so a stolen token cannot redirect the money. -->
 <div class="scrim" id="funds-scrim">
-  <div class="modal">
-    <h2>Move funds</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="funds-modal-title">
+    <h2 id="funds-modal-title">Move funds</h2>
     <p class="lede" id="funds-lede">Deposits are completed at your bank. Withdrawals go to your registered account.</p>
     <div class="field-row">
       <div class="field"><label for="f-dir">Direction</label>
@@ -1550,8 +1563,8 @@ ul.plain li { margin: .15rem 0; }
      symbol or the side be edited here would not be an amendment, it would be a
      different order wearing the same number. -->
 <div class="scrim" id="modify-scrim">
-  <div class="modal">
-    <h2>Amend order</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modify-modal-title">
+    <h2 id="modify-modal-title">Amend order</h2>
     <p class="lede" id="modify-lede"></p>
     <form onsubmit="doModifyOrder(event)">
       <div class="field-row">
@@ -1572,8 +1585,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="order-scrim">
-  <div class="modal">
-    <h2>New order</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
+    <h2 id="order-modal-title">New order</h2>
     <p class="lede" id="order-lede"></p>
     <div id="order-banner" style="margin-bottom:.9rem"></div>
     <form onsubmit="doPlaceOrder(event)">
@@ -1628,8 +1641,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="keys-scrim">
-  <div class="modal">
-    <h2>Keyboard shortcuts</h2>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="keys-modal-title">
+    <h2 id="keys-modal-title">Keyboard shortcuts</h2>
     <p class="lede">Anything you reach for often should not need the mouse.</p>
     <div class="shortcut-row"><span>Overview / Positions / Strategy / Backtest / Health</span><span><kbd>1</kbd>&hairsp;<kbd>2</kbd>&hairsp;<kbd>3</kbd>&hairsp;<kbd>4</kbd>&hairsp;<kbd>5</kbd></span></div>
     <div class="shortcut-row"><span>Halt trading (kill switch)</span><span><kbd>Shift</kbd>&hairsp;<kbd>H</kbd></span></div>
@@ -1644,7 +1657,7 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="update-scrim">
-  <div class="modal" style="max-width:540px">
+  <div class="modal" style="max-width:540px" role="dialog" aria-modal="true" aria-labelledby="update-modal-title">
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
       <span style="font-size:1.5rem">🚀</span>
       <h2 style="margin:0" id="update-modal-title">New update available</h2>
