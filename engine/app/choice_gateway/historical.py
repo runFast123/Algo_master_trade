@@ -121,6 +121,61 @@ def _validate_frame(raw: Any) -> Optional[pd.DataFrame]:
     return df
 
 
+def _fetch_yfinance_ohlcv(
+    symbol: str, timeframe: str, start_date: str, end_date: str, segment_id: int
+) -> Optional[pd.DataFrame]:
+    """Fallback fetcher using yfinance for Indian equities."""
+    if yf is None:
+        logger.warning("yfinance is not installed; skipping fallback.")
+        return None
+
+    # Map timeframes to yfinance intervals
+    interval_map = {"1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m", "1h": "1h", "1d": "1d"}
+    interval = interval_map.get(timeframe, "1d")
+
+    # Indian equities need suffixes (.NS for NSE, .BO for BSE)
+    yf_symbol = symbol
+    if segment_id in (1, 2):  # NSE Cash or NSE F&O
+        if not symbol.endswith(".NS"):
+            yf_symbol = f"{symbol}.NS"
+    elif segment_id == 3:  # BSE Cash
+        if not symbol.endswith(".BO"):
+            yf_symbol = f"{symbol}.BO"
+
+    try:
+        df = yf.download(yf_symbol, start=start_date, end=end_date, interval=interval, progress=False)
+        if df is None or df.empty:
+            return None
+
+        # yfinance returns multi-index columns in recent versions when passing a single ticker,
+        # or uppercase columns. We need a flat structure: timestamp, open, high, low, close, volume
+        df = df.reset_index()
+        
+        # Flatten multi-level columns if they exist
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = [col[0] for col in df.columns]
+
+        df.columns = [str(c).lower() for col in df.columns for c in [col]]
+        
+        # Date or Datetime column -> timestamp
+        time_cols = [c for c in df.columns if c in ("date", "datetime", "timestamp")]
+        if time_cols:
+            df = df.rename(columns={time_cols[0]: "timestamp"})
+            
+        df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+        # Fill missing volume
+        if "volume" not in df.columns:
+            df["volume"] = 0
+
+        # Validate against the required shape
+        records = df.to_dict(orient="records")
+        return _validate_frame(records)
+    except Exception as exc:
+        logger.warning("yfinance fetch failed for %s: %s", yf_symbol, exc)
+        return None
+
+
 def get_historical_ohlcv(
     session: ChoiceSession,
     symbol: str,
