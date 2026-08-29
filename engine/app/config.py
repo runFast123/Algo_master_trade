@@ -19,7 +19,7 @@ CHOICE_BASE_URLS = {
 
 class EngineSettings(BaseSettings):
     PROJECT_NAME: str = "Choice FINX Trading Engine Service"
-    VERSION: str = "1.2.7"
+    VERSION: str = "1.2.8"
     API_V1_STR: str = "/api/v1"
 
     # Which Choice environment order flow is routed to. Defaults to UAT so that
