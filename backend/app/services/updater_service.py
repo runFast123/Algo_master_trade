@@ -167,30 +167,38 @@ def _download_and_apply_update(download_url: str) -> None:
         logger.info("Download complete. Creating updater batch script.")
         
         bat_path = os.path.join(tempfile.gettempdir(), "choice_updater.bat")
+        log_path = os.path.join(tempfile.gettempdir(), "choice_updater_log.txt")
         with open(bat_path, "w") as f:
             f.write(f"""@echo off
 title Choice FINX Algo Updater
-echo Updating Choice FINX Algo Terminal...
-:: Wait briefly to let the Python process finish spawning this script
-timeout /t 2 /nobreak > NUL
-:: Force kill all instances of the application to release the file lock
-:: Do NOT use /T (tree kill) because it would kill this batch script too!
-taskkill /F /IM "{exe_name}" > NUL 2>&1
-timeout /t 2 /nobreak > NUL
-:: Perform the replacement
-del /f /q "{old_exe_path}" 2>NUL
-move /y "{exe_path}" "{old_exe_path}"
-move /y "{new_exe_path}" "{exe_path}"
-:: Restart the application
+echo Updater started > "{log_path}"
+:: Issue kill signal
+taskkill /F /IM "{exe_name}" >> "{log_path}" 2>&1
+
+:: Wait for process to fully exit
+:waitloop
+tasklist | find /i "{exe_name}" >nul
+if not errorlevel 1 (
+    timeout /t 1 /nobreak >nul
+    goto waitloop
+)
+echo Process terminated >> "{log_path}"
+
+del /f /q "{old_exe_path}" >> "{log_path}" 2>&1
+move /y "{exe_path}" "{old_exe_path}" >> "{log_path}" 2>&1
+move /y "{new_exe_path}" "{exe_path}" >> "{log_path}" 2>&1
+echo Starting new application >> "{log_path}"
 start "" "{exe_path}"
-:: Delete this batch script
+echo Updater finished >> "{log_path}"
 del "%~f0"
 """)
         
         logger.info("Running updater script and shutting down.")
         subprocess.Popen(
             ["cmd.exe", "/c", bat_path],
-            creationflags=0x08000000 | 0x00000008  # CREATE_NO_WINDOW | DETACHED_PROCESS
+            creationflags=0x08000000 | 0x00000008,  # CREATE_NO_WINDOW | DETACHED_PROCESS
+            close_fds=True,
+            shell=True
         )
         
         # Exit the current process quickly

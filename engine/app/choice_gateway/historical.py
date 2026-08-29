@@ -98,15 +98,27 @@ def generate_sandbox_ohlcv(
     })
 
 
-def _validate_frame(raw: List[Dict[str, Any]]) -> Optional[pd.DataFrame]:
+def _validate_frame(raw: Any) -> Optional[pd.DataFrame]:
     """Ensure the DataFrame has the columns the backtester requires."""
-    if not raw:
-        return None
-    missing = [c for c in REQUIRED_COLUMNS if c not in raw[0].keys()]
+    if isinstance(raw, pd.DataFrame):
+        if raw.empty:
+            return None
+        df = raw.copy()
+        df.columns = [str(c).lower() for c in df.columns]
+        time_cols = [c for c in df.columns if c in ("time", "date", "datetime", "timestamp")]
+        if time_cols and "timestamp" not in df.columns:
+            df = df.rename(columns={time_cols[0]: "timestamp"})
+    else:
+        if not raw:
+            return None
+        df = pd.DataFrame(raw)
+        df.columns = [str(c).lower() for c in df.columns]
+
+    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
     if missing:
         logger.warning("Choice historical data missing columns: %s", missing)
         return None
-    return pd.DataFrame(raw)
+    return df
 
 
 def get_historical_ohlcv(
