@@ -336,4 +336,5 @@ def run_backtest(
         # was actually computed. See verdict.py for why it is past tense.
         "verdict": verdict(metrics, timeframe),
         "logs": logs,
+        "bars": df[["timestamp", "open", "high", "low", "close", "volume"]].to_dict(orient="records"),
     }

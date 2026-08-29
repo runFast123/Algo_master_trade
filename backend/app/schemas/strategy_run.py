@@ -44,6 +44,7 @@ class StrategyRunResponse(BaseModel):
     params: Optional[Dict[str, Any]] = None
     metrics: Optional[Dict[str, Any]] = None
     logs: Optional[List[Any]] = None
+    bars: Optional[List[Dict[str, Any]]] = None
     created_at: datetime
     updated_at: datetime
 

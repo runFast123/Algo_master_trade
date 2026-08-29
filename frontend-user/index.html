@@ -33,8 +33,8 @@
 
   --ink-1:        #f4f5f7;
   --ink-2:        #a8adb8;
-  --ink-3:        #7a808c;
-  --ink-4:        #8e94a0;
+  --ink-3:        #6d737f;
+  --ink-4:        #4a4f59;
 
   /* Data — categorical slots, validated against --surface-1 */
   --series-1:     #3987e5;
@@ -95,7 +95,7 @@
     --ink-1:        #101114;
     --ink-2:        #4d5058;
     --ink-3:        #767a83;
-    --ink-4:        #5c6069;
+    --ink-4:        #a0a4ac;
 
     --series-1:     #2a78d6;
     --series-2:     #eb6834;
@@ -137,7 +137,7 @@
   --ink-1:        #101114;
   --ink-2:        #4d5058;
   --ink-3:        #767a83;
-  --ink-4:        #5c6069;
+  --ink-4:        #a0a4ac;
 
   --series-1:     #2a78d6;
   --series-2:     #eb6834;
@@ -318,10 +318,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (max-width: 720px) {
   .topbar { gap: .6rem; padding: 0 .75rem; }
   .chip { padding: .3rem .45rem; }
-}
-@media (max-width: 480px) {
-  main { padding: .5rem; }
-  .card-head { gap: var(--space-2); padding: var(--space-2) var(--space-3); }
 }
 
 /* ----------------------------------------------------------------- button -- */
@@ -574,7 +570,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   border: 1px solid var(--hairline); border-radius: var(--radius-sm);
   padding: .8rem; margin-bottom: .8rem; background: var(--surface-1);
 }
-.rule-head { display: flex; align-items: flex-start; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.rule-head { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: .6rem; }
 .rule-head h3 { font-size: 12.5px; font-weight: 650; letter-spacing: .01em; }
 .rule-head .btn { margin-left: auto; flex: none; }
 .rule-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.5; margin-top: .15rem; }
@@ -596,20 +592,16 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   color: var(--ink-3); background: var(--surface-1); padding: 0 .3rem;
 }
 [data-join="any"] .cond + .cond::before { content: "or"; color: var(--info-accent); }
-.cond select, .cond input {
-  min-width: 0; min-height: 28px; padding: .25rem .45rem;
-  background: var(--plane); border: 1px solid var(--hairline-str);
-  border-radius: var(--radius-sm); font-size: 12px; color: var(--ink-1);
-}
+.cond select, .cond input { min-width: 0; }
 .cond select { flex: 1 1 8rem; }
 .cond input[type="number"] { flex: 0 1 6rem; }
 .cond .param {
-  flex: 0 0 4.2rem; font-size: 11.5px;
+  flex: 0 0 4.2rem; font-size: 11px;
 }
 .cond .drop {
-  flex: none; min-height: 28px; min-width: 28px; padding: .25rem .45rem; line-height: 1; color: var(--ink-3);
+  flex: none; padding: .3rem .45rem; line-height: 1; color: var(--ink-3);
   background: none; border: 1px solid transparent; border-radius: var(--radius-sm);
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
 }
 .cond .drop:hover { color: var(--down); border-color: var(--hairline-str); }
 .cond-empty { font-size: 11.5px; color: var(--ink-3); padding: .4rem .2rem; }
@@ -685,7 +677,6 @@ kbd { font: 11px var(--mono); background: var(--surface-3); border: 1px solid va
 .field input, .field select, .field textarea {
   background: var(--plane); border: 1px solid var(--hairline-str);
   border-radius: var(--radius-sm); padding: .5rem .65rem; color: var(--ink-1); font-size: 13px;
-  width: 100%; box-sizing: border-box;
 }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--series-1); }
 /* Suppress the ring for pointer focus only. This was a bare `outline: none` on
@@ -698,10 +689,6 @@ kbd { font: 11px var(--mono); background: var(--surface-3); border: 1px solid va
 .field textarea:focus:not(:focus-visible) { outline: none; }
 .field textarea { font-family: var(--mono); font-size: 12px; line-height: 1.6; resize: vertical; }
 .field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: .75rem; }
-.field-row > * { min-width: 0; }
-@media (max-width: 380px) {
-  .field-row { grid-template-columns: 1fr; }
-}
 
 .note {
   border: 1px solid var(--hairline-str); background: var(--surface-2);
@@ -1179,7 +1166,7 @@ ul.plain li { margin: .15rem 0; }
           <p class="rule-sub">What the builder produced. Editing here replaces
             the builder above, so anything the builder cannot represent is kept
             rather than silently dropped.</p>
-          <textarea id="s-dsl" rows="14" spellcheck="false" aria-label="Strategy rules in JSON format" oninput="jsonEdited()"></textarea>
+          <textarea id="s-dsl" rows="14" spellcheck="false" oninput="jsonEdited()"></textarea>
           <button class="btn btn-sm" onclick="applyJson()">Apply to builder</button>
           <div class="note" style="margin-top:.6rem"><b>Available</b>
             Indicators: SMA, EMA, RSI, BOLLINGER, MACD, ATR, VWAP, STOCH ·
@@ -1248,6 +1235,41 @@ ul.plain li { margin: .15rem 0; }
         <div class="field"><label for="b-cap">Capital (&#8377;)</label><input type="number" id="b-cap" value="100000" min="1"></div>
       </div>
       <button class="btn btn-primary" id="b-run" onclick="runBacktest()">Run backtest</button>
+    </div>
+  </div>
+
+  <div class="card" id="b-sim-card" style="display:none;margin-bottom:.75rem">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Strategy Simulation Replay</div>
+        <div class="card-sub" id="b-sim-sub">Watch the strategy execute bar by bar</div>
+      </div>
+      <div class="spacer"></div>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <select id="sim-speed" class="rate-select" aria-label="Playback speed" onchange="setSimSpeed(this.value)">
+          <option value="1000">1x Speed</option>
+          <option value="500">2x Speed</option>
+          <option value="100" selected>10x Speed</option>
+          <option value="10">Max Speed</option>
+        </select>
+        <button class="btn btn-sm btn-primary" id="btn-sim-play" onclick="toggleSimPlay()">▶ Play</button>
+        <button class="btn btn-sm" id="btn-sim-step" onclick="stepSim()">+1 Bar</button>
+        <button class="btn btn-sm btn-ghost" id="btn-sim-reset" onclick="resetSim()">↺ Reset</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding:0;position:relative">
+      <div style="height:480px;width:100%;overflow:hidden;position:relative">
+        <canvas id="sim-canvas" style="width:100%;height:100%;display:block"></canvas>
+        <div style="position:absolute;top:10px;left:12px;background:rgba(8,17,31,0.7);padding:6px 10px;border-radius:6px;font-size:11px;color:var(--ink-2);pointer-events:none" id="sim-legend">OHLC —</div>
+        <div id="sim-empty" style="position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-3);pointer-events:none">Waiting for backtest data...</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));gap:1px;background:var(--hairline);border-top:1px solid var(--hairline)">
+        <div style="background:var(--surface-1);padding:.6rem 1rem"><span class="eyebrow" style="display:block;margin-bottom:.3rem">Time</span><strong id="sim-kpi-time" style="font-size:14px;font-weight:600">—</strong></div>
+        <div style="background:var(--surface-1);padding:.6rem 1rem"><span class="eyebrow" style="display:block;margin-bottom:.3rem">Open P&amp;L</span><strong id="sim-kpi-open" style="font-size:14px;font-weight:600">—</strong></div>
+        <div style="background:var(--surface-1);padding:.6rem 1rem"><span class="eyebrow" style="display:block;margin-bottom:.3rem">Realised P&amp;L</span><strong id="sim-kpi-realised" style="font-size:14px;font-weight:600">—</strong></div>
+        <div style="background:var(--surface-1);padding:.6rem 1rem"><span class="eyebrow" style="display:block;margin-bottom:.3rem">Position Qty</span><strong id="sim-kpi-qty" style="font-size:14px;font-weight:600">0</strong></div>
+        <div style="background:var(--surface-1);padding:.6rem 1rem"><span class="eyebrow" style="display:block;margin-bottom:.3rem">Avg Entry</span><strong id="sim-kpi-entry" style="font-size:14px;font-weight:600">—</strong></div>
+      </div>
     </div>
   </div>
 
@@ -1439,8 +1461,8 @@ ul.plain li { margin: .15rem 0; }
 <!-- ============================================================= MODALS == -->
 
 <div class="scrim is-open" id="auth-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
-    <h2 id="auth-modal-title">Choice FINX Algo Terminal</h2>
+  <div class="modal">
+    <h2>Choice FINX Algo Terminal</h2>
     <p class="lede">Sign in to the platform. Connecting your broker account is a separate step.</p>
     <div class="seg">
       <button aria-selected="true" id="tab-in" onclick="authTab('in')">Sign in</button>
@@ -1467,8 +1489,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="broker-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="broker-modal-title">
-    <h2 id="broker-modal-title">Connect your Choice account</h2>
+  <div class="modal">
+    <h2>Connect your Choice account</h2>
     <p class="lede">Decide how this session behaves before connecting.</p>
     <form onsubmit="doConnect(event)">
       <div class="field"><label for="c-mode">Mode</label>
@@ -1515,8 +1537,8 @@ ul.plain li { margin: .15rem 0; }
      a bank account Choice already holds — an arbitrary destination is never
      accepted, so a stolen token cannot redirect the money. -->
 <div class="scrim" id="funds-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="funds-modal-title">
-    <h2 id="funds-modal-title">Move funds</h2>
+  <div class="modal">
+    <h2>Move funds</h2>
     <p class="lede" id="funds-lede">Deposits are completed at your bank. Withdrawals go to your registered account.</p>
     <div class="field-row">
       <div class="field"><label for="f-dir">Direction</label>
@@ -1563,8 +1585,8 @@ ul.plain li { margin: .15rem 0; }
      symbol or the side be edited here would not be an amendment, it would be a
      different order wearing the same number. -->
 <div class="scrim" id="modify-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modify-modal-title">
-    <h2 id="modify-modal-title">Amend order</h2>
+  <div class="modal">
+    <h2>Amend order</h2>
     <p class="lede" id="modify-lede"></p>
     <form onsubmit="doModifyOrder(event)">
       <div class="field-row">
@@ -1585,8 +1607,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="order-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="order-modal-title">
-    <h2 id="order-modal-title">New order</h2>
+  <div class="modal">
+    <h2>New order</h2>
     <p class="lede" id="order-lede"></p>
     <div id="order-banner" style="margin-bottom:.9rem"></div>
     <form onsubmit="doPlaceOrder(event)">
@@ -1641,8 +1663,8 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="keys-scrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="keys-modal-title">
-    <h2 id="keys-modal-title">Keyboard shortcuts</h2>
+  <div class="modal">
+    <h2>Keyboard shortcuts</h2>
     <p class="lede">Anything you reach for often should not need the mouse.</p>
     <div class="shortcut-row"><span>Overview / Positions / Strategy / Backtest / Health</span><span><kbd>1</kbd>&hairsp;<kbd>2</kbd>&hairsp;<kbd>3</kbd>&hairsp;<kbd>4</kbd>&hairsp;<kbd>5</kbd></span></div>
     <div class="shortcut-row"><span>Halt trading (kill switch)</span><span><kbd>Shift</kbd>&hairsp;<kbd>H</kbd></span></div>
@@ -1657,7 +1679,7 @@ ul.plain li { margin: .15rem 0; }
 </div>
 
 <div class="scrim" id="update-scrim">
-  <div class="modal" style="max-width:540px" role="dialog" aria-modal="true" aria-labelledby="update-modal-title">
+  <div class="modal" style="max-width:540px">
     <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
       <span style="font-size:1.5rem">🚀</span>
       <h2 style="margin:0" id="update-modal-title">New update available</h2>
@@ -4394,6 +4416,170 @@ function pickForBacktest(id) {
 
 /* --------------------------------------------------------------- backtest -- */
 
+let _simTimer = null;
+let _simBars = [];
+let _simIdx = 0;
+let _simMetrics = null;
+
+function initSim(bars, metrics, params) {
+  _simBars = bars;
+  _simMetrics = metrics;
+  _simIdx = 0;
+  if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
+  document.getElementById("btn-sim-play").textContent = "▶ Play";
+  document.getElementById("btn-sim-step").disabled = false;
+  document.getElementById("sim-empty").style.display = "none";
+  drawSim();
+}
+
+function setSimSpeed(ms) {
+  if (_simTimer) {
+    clearInterval(_simTimer);
+    _simTimer = setInterval(stepSim, parseInt(ms, 10));
+  }
+}
+
+function toggleSimPlay() {
+  const btn = document.getElementById("btn-sim-play");
+  if (_simTimer) {
+    clearInterval(_simTimer);
+    _simTimer = null;
+    btn.textContent = "▶ Play";
+  } else {
+    if (_simIdx >= _simBars.length) _simIdx = 0;
+    _simTimer = setInterval(stepSim, parseInt(document.getElementById("sim-speed").value, 10));
+    btn.textContent = "Ⅱ Pause";
+  }
+}
+
+function stepSim() {
+  if (!_simBars || !_simBars.length) return;
+  _simIdx++;
+  if (_simIdx >= _simBars.length) {
+    _simIdx = _simBars.length;
+    if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
+    document.getElementById("btn-sim-play").textContent = "▶ Play";
+    document.getElementById("btn-sim-step").disabled = true;
+  }
+  drawSim();
+}
+
+function resetSim() {
+  if (_simTimer) { clearInterval(_simTimer); _simTimer = null; }
+  _simIdx = 0;
+  document.getElementById("btn-sim-play").textContent = "▶ Play";
+  document.getElementById("btn-sim-step").disabled = false;
+  drawSim();
+}
+
+function drawSim() {
+  if (!_simBars || !_simBars.length) return;
+  const canvas = document.getElementById("sim-canvas");
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  const x = canvas.getContext("2d");
+  x.scale(dpr, dpr);
+  const W = rect.width, H = rect.height;
+  
+  // Background
+  x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--surface-1").trim() || "#101216";
+  x.fillRect(0, 0, W, H);
+
+  const end = Math.min(Math.max(_simIdx - 1, 0), _simBars.length - 1);
+  const start = Math.max(0, end - 80); // show last 80 bars
+  const a = _simBars.slice(start, end + 1);
+  if (!a.length) return;
+
+  const currentBar = a[a.length - 1];
+  
+  // Calculate active position and trades up to current bar
+  const trades = (_simMetrics && _simMetrics.trades) || [];
+  let openQty = 0;
+  let avgEntry = 0;
+  let realised = 0;
+  
+  const currentTs = new Date(currentBar.timestamp).getTime();
+  
+  for (const t of trades) {
+    const entryTs = new Date(t.entry_date).getTime();
+    const exitTs = new Date(t.exit_date).getTime();
+    
+    if (entryTs <= currentTs && exitTs > currentTs) {
+      openQty = t.qty;
+      avgEntry = t.entry_price;
+    }
+    if (exitTs <= currentTs) {
+      realised += t.pnl;
+    }
+  }
+  
+  const openPnl = openQty ? (currentBar.close - avgEntry) * openQty : 0;
+  
+  // Update KPIs
+  document.getElementById("sim-kpi-time").textContent = currentBar.timestamp.slice(0, 16).replace("T", " ");
+  document.getElementById("sim-kpi-open").textContent = money(openPnl);
+  document.getElementById("sim-kpi-open").style.color = openPnl >= 0 ? "var(--up)" : "var(--down)";
+  document.getElementById("sim-kpi-realised").textContent = money(realised);
+  document.getElementById("sim-kpi-qty").textContent = openQty;
+  document.getElementById("sim-kpi-entry").textContent = openQty ? moneyShort(avgEntry) : "—";
+  
+  document.getElementById("sim-legend").textContent = `OHLC  ${moneyShort(currentBar.open)}  ${moneyShort(currentBar.high)}  ${moneyShort(currentBar.low)}  ${moneyShort(currentBar.close)}`;
+
+  // Price scale
+  const prices = a.flatMap(b => [b.high, b.low]);
+  if (openQty) prices.push(avgEntry);
+  
+  let hi = Math.max(...prices), lo = Math.min(...prices);
+  const pad = (hi - lo || 1) * 0.1;
+  hi += pad; lo -= pad;
+  
+  const left = 10, right = 60, top = 20, bottom = 25;
+  const cw = (W - left - right) / Math.max(a.length, 1);
+  const Y = p => top + (hi - p) / (hi - lo) * (H - top - bottom);
+  
+  // Grid
+  x.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--hairline").trim();
+  x.lineWidth = 1;
+  x.font = "11px var(--font)";
+  x.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--ink-3").trim();
+  x.textAlign = "left";
+  
+  for (let i = 0; i < 5; i++) {
+    const y = top + i * (H - top - bottom) / 4;
+    x.beginPath(); x.moveTo(left, y); x.lineTo(W - right, y); x.stroke();
+    const p = hi - i * (hi - lo) / 4;
+    x.fillText(num(p, 1), W - right + 5, y + 4);
+  }
+  
+  // Candles
+  const upColor = getComputedStyle(document.documentElement).getPropertyValue("--up").trim();
+  const downColor = getComputedStyle(document.documentElement).getPropertyValue("--down").trim();
+  
+  a.forEach((b, j) => {
+    const cx = left + j * cw + cw / 2;
+    const up = b.close >= b.open;
+    x.strokeStyle = up ? upColor : downColor;
+    x.fillStyle = x.strokeStyle;
+    x.beginPath(); x.moveTo(cx, Y(b.high)); x.lineTo(cx, Y(b.low)); x.stroke();
+    const y = Math.min(Y(b.open), Y(b.close));
+    const h = Math.max(2, Math.abs(Y(b.open) - Y(b.close)));
+    x.fillRect(cx - Math.max(1, cw * 0.3), y, Math.max(2, cw * 0.6), h);
+  });
+  
+  // Open Position Line
+  if (openQty) {
+    const y = Y(avgEntry);
+    x.strokeStyle = "var(--warn)";
+    x.setLineDash([5, 5]);
+    x.beginPath(); x.moveTo(left, y); x.lineTo(W - right, y); x.stroke();
+    x.setLineDash([]);
+    x.fillStyle = "var(--warn)";
+    x.fillText("AVG", W - right + 5, y - 5);
+  }
+}
+
 async function runBacktest() {
   const id = document.getElementById("b-strategy").value;
   if (!id) return toast("Save a strategy first.", "bad");
@@ -4450,6 +4636,9 @@ function renderBacktest(run) {
     MARKETSTACK: ["info", "Marketstack historical data",
       "Exchange bars from Marketstack, used because Choice historical data was "
       + "unavailable for this instrument. " + MODELLED],
+    YFINANCE: ["info", "Yahoo Finance historical data",
+      "Exchange bars from Yahoo Finance, used because Choice historical data was "
+      + "unavailable for this instrument. " + MODELLED],
     SANDBOX_SYNTHETIC: ["warn", "Sandbox data",
       "Prices are generated, not exchange data. These results are not indicative "
       + "of real performance."],
@@ -4495,6 +4684,15 @@ function renderBacktest(run) {
       <div class="tile-top"><span class="tile-val">${value}</span>${delta}</div>
       <div class="tile-foot">${foot}</div>
     </div>`).join("");
+
+  document.getElementById("b-log").textContent = (run.logs || []).join("\n");
+
+  if (run.bars && run.bars.length > 0) {
+    document.getElementById("b-sim-card").style.display = "block";
+    initSim(run.bars, run.metrics, run.params);
+  } else {
+    document.getElementById("b-sim-card").style.display = "none";
+  }
 
   document.getElementById("b-charts").style.display = "grid";
 

@@ -8,18 +8,23 @@ backtest can never present made-up prices as real ones.
 
 import logging
 import zlib
-from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import pandas as pd
+import numpy as np
 
-from engine.app.choice_gateway.client_manager import ChoiceSession, SessionMode
-from engine.app.choice_gateway.errors import ChoiceNotConnected, ChoiceUpstreamError
-from engine.app.choice_gateway.marketstack import marketstack_client
 from engine.app.config import engine_settings
+from . import marketstack as marketstack_client
+from .client_manager import ChoiceSession, SessionMode
+from .errors import ChoiceNotConnected, ChoiceUpstreamError
 
-logger = logging.getLogger("choice_gateway")
+logger = logging.getLogger("choice_gateway.historical")
+
+try:
+    import yfinance as yf
+except ImportError:
+    yf = None
 
 REQUIRED_COLUMNS = ("timestamp", "open", "high", "low", "close", "volume")
 
@@ -93,14 +98,15 @@ def generate_sandbox_ohlcv(
     })
 
 
-def _validate_frame(df: Any) -> Optional[pd.DataFrame]:
-    if not isinstance(df, pd.DataFrame) or df.empty:
+def _validate_frame(raw: List[Dict[str, Any]]) -> Optional[pd.DataFrame]:
+    """Ensure the DataFrame has the columns the backtester requires."""
+    if not raw:
         return None
-    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+    missing = [c for c in REQUIRED_COLUMNS if c not in raw[0].keys()]
     if missing:
         logger.warning("Choice historical data missing columns: %s", missing)
         return None
-    return df
+    return pd.DataFrame(raw)
 
 
 def get_historical_ohlcv(
@@ -189,6 +195,17 @@ def get_historical_ohlcv(
             return df, provenance
         except Exception as ms_exc:
             logger.warning("Marketstack fallback also failed for %s: %s", symbol, ms_exc)
+
+    # 4. Fallback to yfinance if Choice and Marketstack both fail
+    if provider in ("AUTO", "YFINANCE"):
+        logger.info("Falling back to yfinance for %s (Choice err: %s)", symbol, choice_err)
+        try:
+            df = _fetch_yfinance_ohlcv(symbol, timeframe, start_date, end_date, segment_id)
+            if df is not None and not df.empty:
+                provenance.update(source="YFINANCE", is_real_market_data=True, bars=len(df))
+                return df, provenance
+        except Exception as yf_exc:
+            logger.warning("yfinance fallback failed for %s: %s", symbol, yf_exc)
 
     if choice_err:
         raise ChoiceUpstreamError(

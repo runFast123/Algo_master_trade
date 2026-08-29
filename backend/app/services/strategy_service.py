@@ -143,6 +143,12 @@ class StrategyService:
         # three-year request reports every metric over a period nobody asked
         # for. `metrics` is already a JSON column, so this rides along with it.
         run.metrics = dict(run.metrics or {}, provenance=result["data_source"])
+        
+        # We attach the raw bars from the engine to the run instance so the
+        # router can return it in the Response model, but we don't save the 
+        # potentially massive OHLCV array to the SQLite database.
+        run.bars = result.get("bars")
+        
         db.commit()
         db.refresh(run)
 
