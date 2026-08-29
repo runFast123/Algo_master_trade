@@ -158,6 +158,7 @@ def _download_and_apply_update(download_url: str) -> None:
         # sys.executable points to the current Python interpreter.
         # In a PyInstaller one-file frozen build, sys.executable is the standalone .exe.
         exe_path = os.path.abspath(sys.executable)
+        exe_name = os.path.basename(exe_path)
         new_exe_path = exe_path + ".new"
         old_exe_path = exe_path + ".old"
         
@@ -170,11 +171,19 @@ def _download_and_apply_update(download_url: str) -> None:
             f.write(f"""@echo off
 title Choice FINX Algo Updater
 echo Updating Choice FINX Algo Terminal...
-timeout /t 3 /nobreak > NUL
+:: Wait briefly to let the Python process finish spawning this script
+timeout /t 2 /nobreak > NUL
+:: Force kill all instances of the application to release the file lock
+:: Do NOT use /T (tree kill) because it would kill this batch script too!
+taskkill /F /IM "{exe_name}" > NUL 2>&1
+timeout /t 2 /nobreak > NUL
+:: Perform the replacement
 del /f /q "{old_exe_path}" 2>NUL
 move /y "{exe_path}" "{old_exe_path}"
 move /y "{new_exe_path}" "{exe_path}"
+:: Restart the application
 start "" "{exe_path}"
+:: Delete this batch script
 del "%~f0"
 """)
         
@@ -184,11 +193,7 @@ del "%~f0"
             creationflags=0x08000000 | 0x00000008  # CREATE_NO_WINDOW | DETACHED_PROCESS
         )
         
-        # We need to kill the parent process (the launcher wrapper) so it releases the lock on the .exe
-        parent_pid = os.getppid()
-        if sys.platform == "win32":
-            subprocess.run(["taskkill", "/F", "/PID", str(parent_pid)], shell=True)
-            
+        # Exit the current process quickly
         os._exit(0)
     except Exception as e:
         logger.error(f"Failed to apply update: {e}", exc_info=True)
