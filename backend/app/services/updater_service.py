@@ -146,3 +146,57 @@ def check_for_updates(
     _cached_release_info = result
     _last_checked_time = now
     return result
+
+
+def _download_and_apply_update(download_url: str) -> None:
+    import os
+    import sys
+    import subprocess
+    import tempfile
+    
+    try:
+        exe_path = sys.executable
+        new_exe_path = exe_path + ".new"
+        old_exe_path = exe_path + ".old"
+        
+        logger.info(f"Downloading update from {download_url} to {new_exe_path}")
+        urllib.request.urlretrieve(download_url, new_exe_path)
+        logger.info("Download complete. Creating updater batch script.")
+        
+        bat_path = os.path.join(tempfile.gettempdir(), "choice_updater.bat")
+        with open(bat_path, "w") as f:
+            f.write(f"""@echo off
+title Choice FINX Algo Updater
+echo Updating Choice FINX Algo Terminal...
+timeout /t 3 /nobreak > NUL
+del /f /q "{old_exe_path}" 2>NUL
+move /y "{exe_path}" "{old_exe_path}"
+move /y "{new_exe_path}" "{exe_path}"
+start "" "{exe_path}"
+del "%~f0"
+""")
+        
+        logger.info("Running updater script and shutting down.")
+        subprocess.Popen(
+            ["cmd.exe", "/c", bat_path],
+            creationflags=0x08000000 | 0x00000008  # CREATE_NO_WINDOW | DETACHED_PROCESS
+        )
+        
+        # We need to kill the parent process (the launcher) so it releases the lock on the .exe
+        parent_pid = os.getppid()
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/F", "/PID", str(parent_pid)], shell=True)
+            
+        os._exit(0)
+    except Exception as e:
+        logger.error(f"Failed to apply update: {e}", exc_info=True)
+
+
+def apply_update_async(download_url: str) -> None:
+    import sys
+    import threading
+    
+    if not getattr(sys, "frozen", False):
+        raise RuntimeError("In-app auto-update is only available in the compiled Windows executable.")
+        
+    threading.Thread(target=_download_and_apply_update, args=(download_url,), daemon=True).start()

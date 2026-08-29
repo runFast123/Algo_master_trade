@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Query
 from app.config import settings
 from app.services import updater_service
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -24,3 +25,18 @@ def check_updates(force: bool = Query(default=False, description="Force re-check
         current_version=settings.VERSION,
         force_check=force,
     )
+
+
+class ApplyUpdateRequest(BaseModel):
+    download_url: str
+
+
+@router.post("/update/apply")
+def apply_update(req: ApplyUpdateRequest):
+    """Downloads the new executable and applies the update."""
+    try:
+        updater_service.apply_update_async(req.download_url)
+        return {"status": "updating", "message": "Downloading update. The application will restart shortly."}
+    except RuntimeError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))

@@ -1696,9 +1696,9 @@ ul.plain li { margin: .15rem 0; }
     </div>
     <div style="display:flex;gap:.5rem;margin-top:1rem">
       <button class="btn" style="flex:1" onclick="closeModal('update-scrim')">Later</button>
-      <a id="update-modal-dl-btn" href="https://github.com/runFast123/Algo_master_trade/releases/latest" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="flex:2;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:.35rem">
-        ⬇️ Download ChoiceFinxTrader.exe
-      </a>
+      <button id="update-modal-dl-btn" class="btn btn-primary" style="flex:2;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:.35rem">
+        ⬇️ Install Update
+      </button>
     </div>
   </div>
 </div>
@@ -5582,9 +5582,33 @@ function openUpdateModal() {
   document.getElementById("update-modal-notes").textContent = d.release_notes || "Bug fixes, performance improvements, and reliability updates.";
   const dlBtn = document.getElementById("update-modal-dl-btn");
   if (dlBtn) {
-    dlBtn.href = d.download_url || d.html_url || "https://github.com/runFast123/Algo_master_trade/releases/latest";
+    dlBtn.onclick = (e) => {
+      e.preventDefault();
+      applyUpdate(d.download_url);
+    };
   }
   openModal("update-scrim");
+}
+
+async function applyUpdate(download_url) {
+  const btn = document.getElementById("update-modal-dl-btn");
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Downloading update... (please wait)";
+    btn.style.pointerEvents = "none";
+  }
+  try {
+    await api("/system/update/apply", { method: "POST", body: JSON.stringify({ download_url }) });
+    if (btn) btn.textContent = "✅ Update downloaded. Restarting...";
+    toast("Update is applying. The application will close and restart automatically.", "good");
+  } catch (e) {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "⬇️ Download ChoiceFinxTrader.exe";
+      btn.style.pointerEvents = "auto";
+    }
+    toast("Update failed: " + e.message, "bad");
+  }
 }
 
 /* ------------------------------------------------------------------ start -- */
