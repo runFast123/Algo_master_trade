@@ -179,13 +179,16 @@ def get_historical_ohlcv(
         return df, provenance
 
     # 3. Fallback to Marketstack if Choice is unavailable and Marketstack is configured
-    if provider == "AUTO" and marketstack_client.is_configured:
+    # We create an instance to check configuration because marketstack_client acts
+    # as the module locally, but it exports the MarketstackClient class
+    ms_client = marketstack_client.MarketstackClient()
+    if provider == "AUTO" and ms_client.is_configured:
         logger.info(
             "Choice historical data unavailable (%s); falling back to Marketstack for %s",
             choice_err or "empty/invalid response", symbol,
         )
         try:
-            df, m_prov = marketstack_client.get_historical_ohlcv(
+            df, m_prov = ms_client.get_historical_ohlcv(
                 symbol=symbol,
                 timeframe=timeframe,
                 start_date=start_date,

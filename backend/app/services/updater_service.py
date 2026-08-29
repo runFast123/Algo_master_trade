@@ -155,7 +155,9 @@ def _download_and_apply_update(download_url: str) -> None:
     import tempfile
     
     try:
-        exe_path = sys.executable
+        # sys.executable points to the current Python interpreter.
+        # In a PyInstaller one-file frozen build, sys.executable is the standalone .exe.
+        exe_path = os.path.abspath(sys.executable)
         new_exe_path = exe_path + ".new"
         old_exe_path = exe_path + ".old"
         
@@ -182,7 +184,7 @@ del "%~f0"
             creationflags=0x08000000 | 0x00000008  # CREATE_NO_WINDOW | DETACHED_PROCESS
         )
         
-        # We need to kill the parent process (the launcher) so it releases the lock on the .exe
+        # We need to kill the parent process (the launcher wrapper) so it releases the lock on the .exe
         parent_pid = os.getppid()
         if sys.platform == "win32":
             subprocess.run(["taskkill", "/F", "/PID", str(parent_pid)], shell=True)
