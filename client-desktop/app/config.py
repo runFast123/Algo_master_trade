@@ -20,7 +20,7 @@ def _baked_licence_server() -> str:
 
 class DesktopConfig(BaseSettings):
     APP_NAME: str = "Choice FINX Algo Trading Platform"
-    APP_VERSION: str = "1.2.5"
+    APP_VERSION: str = "1.2.7"
     GITHUB_REPO: str = "runFast123/Algo_master_trade"
 
     # Preferred ports; the launcher moves to the next free one if taken.

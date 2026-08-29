@@ -196,9 +196,7 @@ del "%~f0"
         logger.info("Running updater script and shutting down.")
         subprocess.Popen(
             ["cmd.exe", "/c", bat_path],
-            creationflags=0x08000000 | 0x00000008,  # CREATE_NO_WINDOW | DETACHED_PROCESS
-            close_fds=True,
-            shell=True
+            creationflags=0x00000010  # CREATE_NEW_CONSOLE - makes the batch window visible so the launched app is also visible
         )
         
         # Exit the current process quickly
