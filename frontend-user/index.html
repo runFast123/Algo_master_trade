@@ -1375,7 +1375,7 @@ ul.plain li { margin: .15rem 0; }
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
         <div>
           <span style="font-weight:600">Current version:</span> <span id="app-curr-ver">v1.1.0</span> &nbsp;&middot;&nbsp;
-          <span style="font-weight:600">Status:</span> <span id="app-update-state" class="chip is-ok" style="font-size:0.75rem;padding:0.15rem 0.5rem">Up to date</span>
+          <span style="font-weight:600">Status:</span> <span id="app-update-state" class="chip" style="font-size:0.75rem;padding:0.15rem 0.5rem">Not checked</span>
         </div>
         <div id="app-latest-link-wrap">
           <a href="https://github.com/runFast123/Algo_master_trade/releases" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm" style="text-decoration:none">View releases on GitHub &rarr;</a>
@@ -2548,9 +2548,25 @@ async function doConnect(ev) {
   finally { btn.disabled = false; }
 }
 
+async function probeLiveQuotes() {
+  // Health reports market_data_ok from the last quote call. Status alone never
+  // touches MultipleTouchline, so the chip stayed on "Not checked yet" after
+  // a working PAPER/LIVE connect. Probe the default watchlist; DEMO uses
+  // sandbox fixtures, PAPER/LIVE use the live broker (never the demo table).
+  const mode = (state.broker || {}).mode;
+  if (!state.broker || !state.broker.connected) return;
+  if (mode !== "PAPER" && mode !== "LIVE" && mode !== "DEMO") return;
+  try {
+    await api("/market/quotes");
+  } catch (e) { /* status re-read below still carries market_data_ok */ }
+  try { state.broker = await api("/auth/choice/status"); }
+  catch (e) { /* keep the status we already have */ }
+}
+
 async function refreshBroker() {
   try { state.broker = await api("/auth/choice/status"); }
   catch (e) { state.broker = { connected: false, mode: "DISCONNECTED" }; }
+  await probeLiveQuotes();
   const { connected, mode, environment } = state.broker;
   const chip = document.getElementById("mode-chip");
   const text = document.getElementById("mode-text");
@@ -5022,7 +5038,7 @@ function switchView(name) {
   document.getElementById("view-" + name).classList.add("is-active");
   document.querySelectorAll("#nav button").forEach(b =>
     b.setAttribute("aria-selected", String(b.dataset.view === name)));
-  if (name === "health") { renderBrokerStatus(); loadMarketStatus(); }
+  if (name === "health") { refreshBroker(); loadMarketStatus(); }
   // Arriving at a data view should show current figures rather than whatever
   // was true when it was last open — the poll skipped it while it was hidden.
   if (state.token && state.broker.connected && (VIEW_LOADERS[name] || (() => []))().length) {
@@ -5552,6 +5568,26 @@ async function checkAppUpdates(force = false) {
           </div>`;
       }
       if (force) toast(`Update v${data.latest_version} is available!`, "good");
+    } else if (data.status === "error") {
+      // A failed GitHub check used to look identical to "up to date" because
+      // update_available is false on errors. That hid real releases.
+      if (pillEl) pillEl.style.display = "none";
+      if (statusEl) {
+        statusEl.className = "chip";
+        statusEl.textContent = "Check failed";
+      }
+      if (detailsEl) {
+        detailsEl.style.display = "block";
+        detailsEl.innerHTML = `
+          <div>
+            <b>Could not check GitHub for updates.</b>
+            <div style="font-size:0.8rem;color:var(--text-muted,#94a3b8);margin-top:2px">${esc(data.error || "GitHub was unreachable.")}</div>
+            <div style="margin-top:.5rem">
+              <a href="${esc(data.html_url || "https://github.com/runFast123/Algo_master_trade/releases")}" target="_blank" rel="noopener noreferrer" class="btn btn-sm">View releases on GitHub &rarr;</a>
+            </div>
+          </div>`;
+      }
+      if (force) toast("Could not check for updates: " + (data.error || "GitHub unreachable"), "bad");
     } else {
       if (pillEl) pillEl.style.display = "none";
       if (statusEl) {
@@ -5563,7 +5599,7 @@ async function checkAppUpdates(force = false) {
     }
   } catch (e) {
     if (statusEl) {
-      statusEl.className = "chip is-off";
+      statusEl.className = "chip";
       statusEl.textContent = "Check offline";
     }
     if (force) toast("Could not check for updates: " + e.message, "bad");

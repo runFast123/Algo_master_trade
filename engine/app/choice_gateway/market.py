@@ -169,6 +169,7 @@ def get_multiple_touchline(session: ChoiceSession, seg_tokens: str) -> Dict[str,
             "data": _demo_quotes(cache_key),
             "cached": False,
         }
+        session.market_data_ok = True
         session.quote_cache[cache_key] = {"at": now, "payload": payload}
         return payload
 
@@ -219,6 +220,7 @@ def get_multiple_touchline(session: ChoiceSession, seg_tokens: str) -> Dict[str,
                 "source": "holdings_snapshot",
             }
             session.quote_cache[cache_key] = {"at": now, "payload": payload}
+            session.market_data_ok = True
             return payload
 
         session.market_data_ok = False

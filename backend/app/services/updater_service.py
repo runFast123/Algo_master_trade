@@ -7,6 +7,7 @@ Results are cached in memory to avoid GitHub API rate limits.
 import json
 import logging
 import re
+import ssl
 import time
 import urllib.error
 import urllib.request
@@ -17,6 +18,23 @@ logger = logging.getLogger("updater")
 _CACHE_TTL_SECONDS = 15 * 60  # 15 minutes cache
 _cached_release_info: Optional[Dict[str, Any]] = None
 _last_checked_time: float = 0.0
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """Verify GitHub with the system CA store, plus certifi when bundled.
+
+    Frozen Windows builds often cannot see the OS certificate store through
+    urllib. Without an explicit context the latest-release GET fails, the UI
+    used to paint that as "Up to date", and a real release never appeared.
+    """
+    context = ssl.create_default_context()
+    try:
+        import certifi
+
+        context.load_verify_locations(certifi.where())
+    except Exception:
+        pass
+    return context
 
 
 def _parse_version(version_str: str) -> Tuple[int, ...]:
@@ -75,7 +93,7 @@ def check_for_updates(
 
     try:
         request = urllib.request.Request(url, headers=headers, method="GET")
-        with urllib.request.urlopen(request, timeout=8) as response:
+        with urllib.request.urlopen(request, timeout=8, context=_ssl_context()) as response:
             if response.status != 200:
                 fallback_result["status"] = "error"
                 fallback_result["error"] = f"GitHub API responded with status {response.status}"

@@ -610,6 +610,72 @@ T("and the list was actually rebuilt", sel.options.length === 2,
   sel.options.length + " options");
 window.api = realApi;
 
+// -- Health: a failed GitHub check must not read as "Up to date" -----------
+T("Health does not claim up to date before a successful check",
+  !/Up to date/.test(document.getElementById("app-update-state").textContent),
+  document.getElementById("app-update-state").textContent);
+
+const realFetch = window.fetch;
+const keptUpdateToast = window.toast;
+let updateToasts = [];
+window.toast = (msg) => { updateToasts.push(msg); };
+window.fetch = async () => ({
+  ok: true,
+  json: async () => ({
+    update_available: false,
+    status: "error",
+    current_version: "1.2.8",
+    latest_version: "1.2.8",
+    error: "GitHub rate limit exceeded",
+    html_url: "https://github.com/runFast123/Algo_master_trade/releases",
+  }),
+});
+await checkAppUpdates(false);
+T("a failed update check is not painted as up to date",
+  document.getElementById("app-update-state").textContent.trim() === "Check failed",
+  document.getElementById("app-update-state").textContent);
+T("a failed silent check does not toast latest-version",
+  !updateToasts.some(m => /latest version/.test(m)), updateToasts.join(" | "));
+
+window.fetch = async () => ({
+  ok: true,
+  json: async () => ({
+    update_available: true,
+    status: "update_available",
+    current_version: "1.2.8",
+    latest_version: "1.2.9",
+    tag_name: "v1.2.9",
+    release_name: "Choice FINX Algo v1.2.9",
+    published_at: "2026-09-01T05:44:57Z",
+  }),
+});
+await checkAppUpdates(false);
+T("1.2.8 is offered 1.2.9 when GitHub answers",
+  /Update available: v1.2.9/.test(document.getElementById("app-update-state").textContent),
+  document.getElementById("app-update-state").textContent);
+window.fetch = realFetch;
+window.toast = keptUpdateToast;
+
+let quotePaths = [];
+const realApiQuotes = window.api;
+window.api = async (path) => {
+  quotePaths.push(path);
+  if (path === "/auth/choice/status") {
+    return { connected: true, mode: "PAPER", environment: "PROD",
+             market_data_ok: true, credential_state: "OK" };
+  }
+  if (path === "/market/quotes") {
+    return { status: "SUCCESS", data: [{ symbol: "RELIANCE", ltp: 1324.10 }] };
+  }
+  return {};
+};
+state.token = "t";
+state.broker = { connected: true, mode: "PAPER" };
+await refreshBroker();
+T("broker refresh probes live quotes", quotePaths.includes("/market/quotes"),
+  quotePaths.join(" | "));
+window.api = realApiQuotes;
+
 // -- finished runs are not re-polled ---------------------------------------
 //
 // Nothing removed runs from the list, so every run started in a session was

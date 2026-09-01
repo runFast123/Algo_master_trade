@@ -84,6 +84,87 @@ def test_check_for_updates_offline_graceful():
         assert "No internet" in str(res["error"])
 
 
+def test_check_for_updates_error_is_not_cached():
+    """A failed GitHub GET must not freeze the next check as up-to-date."""
+    import app.services.updater_service as svc
+
+    svc._cached_release_info = None
+    svc._last_checked_time = 0.0
+
+    with unittest.mock.patch(
+        "urllib.request.urlopen",
+        side_effect=urllib.error.URLError("No internet"),
+    ):
+        first = check_for_updates(
+            repo="runFast123/Algo_master_trade",
+            current_version="1.2.8",
+            force_check=False,
+        )
+    assert first["status"] == "error"
+    assert svc._cached_release_info is None
+
+    mock_payload = {
+        "tag_name": "v1.2.9",
+        "name": "Choice FINX Algo v1.2.9",
+        "body": "Fix updater false up-to-date.",
+        "html_url": "https://github.com/runFast123/Algo_master_trade/releases/tag/v1.2.9",
+        "published_at": "2026-09-01T05:44:57Z",
+        "assets": [
+            {
+                "name": "ChoiceFinxTrader.exe",
+                "size": 110000000,
+                "browser_download_url": "https://github.com/runFast123/Algo_master_trade/releases/download/v1.2.9/ChoiceFinxTrader.exe",
+            }
+        ],
+    }
+    mock_resp = unittest.mock.MagicMock()
+    mock_resp.status = 200
+    mock_resp.read.return_value = json.dumps(mock_payload).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
+
+    with unittest.mock.patch("urllib.request.urlopen", return_value=mock_resp):
+        second = check_for_updates(
+            repo="runFast123/Algo_master_trade",
+            current_version="1.2.8",
+            force_check=False,
+        )
+    assert second["update_available"] is True
+    assert second["latest_version"] == "1.2.9"
+    assert second["status"] == "update_available"
+
+
+def test_running_1_2_8_sees_1_2_9_as_available():
+    mock_payload = {
+        "tag_name": "v1.2.9",
+        "name": "Choice FINX Algo v1.2.9",
+        "body": "Historical and updater fixes.",
+        "html_url": "https://github.com/runFast123/Algo_master_trade/releases/tag/v1.2.9",
+        "published_at": "2026-09-01T05:44:57Z",
+        "assets": [
+            {
+                "name": "ChoiceFinxTrader.exe",
+                "size": 110000000,
+                "browser_download_url": "https://github.com/runFast123/Algo_master_trade/releases/download/v1.2.9/ChoiceFinxTrader.exe",
+            }
+        ],
+    }
+    mock_resp = unittest.mock.MagicMock()
+    mock_resp.status = 200
+    mock_resp.read.return_value = json.dumps(mock_payload).encode("utf-8")
+    mock_resp.__enter__.return_value = mock_resp
+
+    with unittest.mock.patch("urllib.request.urlopen", return_value=mock_resp) as opener:
+        res = check_for_updates(
+            repo="runFast123/Algo_master_trade",
+            current_version="1.2.8",
+            force_check=True,
+        )
+    assert res["update_available"] is True
+    assert res["latest_version"] == "1.2.9"
+    assert res["status"] == "update_available"
+    assert opener.call_args.kwargs.get("context") is not None
+
+
 def test_system_endpoints(client):
     r_ver = client.get("/api/v1/system/version")
     assert r_ver.status_code == 200

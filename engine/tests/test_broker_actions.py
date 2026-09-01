@@ -409,6 +409,9 @@ def test_a_held_instrument_is_priced_from_the_holdings_snapshot():
     assert result["data"][0]["ltp"] == 1324.10
     # Emphatically not the fixture value.
     assert result["data"][0]["ltp"] != 2504.50
+    # Health used to stay on "Not checked yet" because this path returned
+    # without flipping market_data_ok.
+    assert session.market_data_ok is True
 
 
 def test_the_holdings_price_carries_the_day_change():
@@ -455,3 +458,4 @@ def test_a_sandbox_session_still_uses_its_fixtures():
 
     assert result["mode"] == "DEMO"
     assert result["data"][0]["ltp"] == 2504.50
+    assert session.market_data_ok is True

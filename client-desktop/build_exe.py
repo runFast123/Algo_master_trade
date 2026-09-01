@@ -224,12 +224,15 @@ def build(one_file: bool, windowed: bool, version: str,
         # surface until a user connects — name it explicitly.
         "cryptography.fernet",
         "cryptography.hazmat.primitives.ciphers", "websockets", "websocket",
+        # Frozen urllib HTTPS to GitHub needs the CA bundle; without it the
+        # updater GET fails and Health used to claim "Up to date".
+        "certifi",
     ]:
         command += ["--hidden-import", module]
 
     for package in [
         "choice_api", "fastapi", "pydantic", "sqlalchemy", "uvicorn", "requests",
-        "jose", "cryptography",
+        "jose", "cryptography", "certifi",
     ]:
         command += ["--collect-submodules", package]
 
@@ -293,7 +296,7 @@ def main() -> int:
         help="Hide the console window. Startup errors become invisible, so "
              "keep the console while testing.",
     )
-    parser.add_argument("--app-version", default="1.2.9")
+    parser.add_argument("--app-version", default="1.2.10")
     parser.add_argument(
         "--licence-server", default="",
         help="Licence service URL to bake into this build, e.g. "

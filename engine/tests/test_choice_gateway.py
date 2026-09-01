@@ -314,6 +314,7 @@ def test_paper_touchline_can_price_from_holdings():
     assert result["data"][0]["ltp"] == 1324.10
     # Sandbox RELIANCE is 2504.50 — that fiction must not appear here.
     assert result["data"][0]["ltp"] != 2504.50
+    assert session.market_data_ok is True
 
 
 def test_live_touchline_success_filters_unrequested_rows():
