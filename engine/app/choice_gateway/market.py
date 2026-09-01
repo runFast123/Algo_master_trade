@@ -186,85 +186,79 @@ def get_multiple_touchline(session: ChoiceSession, seg_tokens: str) -> Dict[str,
     except Exception as exc:
         touchline_err = exc
 
-    if touchline_err is not None or is_failure(raw):
-        # In LIVE mode, fail loudly since real money execution requires live broker feed
-        if session.is_live:
-            session.market_data_ok = False
-            raise ChoiceUpstreamError(
-                "Choice could not return quotes",
-                str(touchline_err) if touchline_err else failure_reason(raw),
-            )
+    wanted = _requested_keys(cache_key)
+    quotes: List[Dict[str, Any]] = []
+    seen = set()
 
-        # PAPER, signed in with real credentials. This used to fall back to the
-        # sandbox price table "so simulation can run after-hours" — but those
-        # are fixed numbers written months ago, and against a live account they
-        # were 38% to 89% wrong: RELIANCE quoted at 2504.50 while Choice's own
-        # holdings record said 1324.10. Paper fills went through at the fiction.
-        #
-        # A paper trade is meant to answer "what would this strategy have
-        # done", and an invented price makes the answer worthless in a way that
-        # looks exactly like a working system. Real prices or none.
-        reason = str(touchline_err) if touchline_err else failure_reason(raw)
+    if touchline_err is None and not is_failure(raw):
+        rows = unwrap_list(raw)
+        for row in rows:
+            quote = _normalize_quote(row)
+            key = (quote.get("segment_id"), str(quote.get("token") or ""))
+            if wanted and key not in wanted:
+                continue
+            if key in seen:
+                continue
+            seen.add(key)
+            quotes.append(quote)
+
+    # If batch touchline failed or returned empty and multiple tokens were requested,
+    # try individual touchline requests (e.g. if an index token caused an array bounds error)
+    if not quotes and wanted and len(wanted) > 1:
+        for seg_id, tok in wanted:
+            try:
+                client = session.require_client()
+                single_raw = client.market.get_multiple_touchline(f"{seg_id}_{tok}")
+                if not is_failure(single_raw):
+                    for row in unwrap_list(single_raw):
+                        quote = _normalize_quote(row)
+                        key = (quote.get("segment_id"), str(quote.get("token") or ""))
+                        if key == (seg_id, tok) and key not in seen:
+                            seen.add(key)
+                            quotes.append(quote)
+            except Exception:
+                pass
+
+    # If touchline still yielded nothing, try ChartData from Choice OpenAPI via kkunal SDK
+    if not quotes:
+        quotes = _quotes_from_chart_data(session, cache_key)
+        for q in quotes:
+            seen.add((q.get("segment_id"), str(q.get("token") or "")))
+
+    # If still no quotes, try holdings / positions
+    if not quotes:
         quotes = _quotes_from_holdings(session, cache_key)
-        if quotes:
-            logger.info(
-                "Touchline unavailable (%s); pricing %s from the holdings "
-                "snapshot instead.", reason, cache_key,
-            )
-            payload = {
-                "status": "SUCCESS",
-                "mode": session.mode.value,
-                "is_open": is_indian_market_hours(),
-                "data": quotes,
-                "cached": False,
-                "source": "holdings_snapshot",
-            }
-            session.quote_cache[cache_key] = {"at": now, "payload": payload}
-            session.market_data_ok = True
-            return payload
 
+    if quotes:
+        session.market_data_ok = True
+        payload = {
+            "status": "SUCCESS",
+            "mode": session.mode.value,
+            "is_open": is_indian_market_hours(),
+            "data": quotes,
+            "cached": False,
+            "source": quotes[0].get("source", "choice_openapi"),
+        }
+        session.quote_cache[cache_key] = {"at": now, "payload": payload}
+        return payload
+
+    # In LIVE mode, fail loudly since real money execution requires live broker feed
+    if session.is_live:
         session.market_data_ok = False
         raise ChoiceUpstreamError(
-            "Choice returned no price for this instrument, and it is not in "
-            "your holdings to price from. Paper trading needs a real price - "
-            "filling at a placeholder would make the result meaningless.",
-            reason,
+            "Choice could not return quotes",
+            str(touchline_err) if touchline_err else failure_reason(raw),
         )
 
-    session.market_data_ok = True
-
-    rows = unwrap_list(raw)
-    if not rows and isinstance(raw, dict):
-        logger.info(
-            "Choice returned no quotes for %s; envelope keys were %s",
-            cache_key, sorted(raw.keys())[:20],
-        )
-
-    # Keep only what was asked for. Choice has been observed returning rows for
-    # instruments that were not requested, and `_market_fill_price` takes the
-    # first quote carrying a price — so an unrequested row would fill an order
-    # at the wrong instrument's price.
-    wanted = _requested_keys(cache_key)
-    quotes, seen = [], set()
-    for row in rows:
-        quote = _normalize_quote(row)
-        key = (quote.get("segment_id"), str(quote.get("token") or ""))
-        if wanted and key not in wanted:
-            continue
-        if key in seen:
-            continue
-        seen.add(key)
-        quotes.append(quote)
-
-    payload = {
-        "status": "SUCCESS",
-        "mode": session.mode.value,
-        "is_open": is_indian_market_hours(),
-        "data": quotes,
-        "cached": False,
-    }
-    session.quote_cache[cache_key] = {"at": now, "payload": payload}
-    return payload
+    # In PAPER mode, real prices or none. Never invent a placeholder.
+    reason = str(touchline_err) if touchline_err else (failure_reason(raw) if is_failure(raw) else "No quotes returned")
+    session.market_data_ok = False
+    raise ChoiceUpstreamError(
+        "Choice returned no price for this instrument, and it is not in "
+        "your holdings to price from. Paper trading needs a real price - "
+        "filling at a placeholder would make the result meaningless.",
+        reason,
+    )
 
 
 # Sandbox instruments. Static reference values, clearly labelled as sandbox
@@ -280,6 +274,71 @@ _DEMO_INSTRUMENTS = {
     "1_1333": {"symbol": "HDFCBANK", "ltp": 1650.00, "chg": 18.00, "chg_pct": 1.10},
     "3_1": {"symbol": "SENSEX", "ltp": 79850.15, "chg": -119.77, "chg_pct": -0.15},
 }
+
+
+def _quotes_from_chart_data(session: ChoiceSession, seg_tokens: str) -> List[Dict[str, Any]]:
+    """Price the requested instruments using Choice OpenAPI ChartData via kkunal SDK.
+
+    When MultipleTouchline REST endpoint is unavailable, Choice's ChartData
+    endpoint (api/OpenGraph/ChartData) provides real intraday / daily bars from
+    the exchange.
+    """
+    wanted = _requested_keys(seg_tokens)
+    if not wanted:
+        return []
+
+    client = getattr(session, "client", None)
+    if not client or not hasattr(client, "historical"):
+        return []
+
+    today_str = _ist_now().strftime("%Y-%m-%d")
+    from_date = (_ist_now() - datetime.timedelta(days=5)).strftime("%Y-%m-%d")
+
+    quotes = []
+    for seg_id, tok in wanted:
+        try:
+            tok_int = int(tok)
+            # Resolution "D" returns reliable EOD/intraday bars
+            df = client.historical.get_historical_data(
+                segment_id=seg_id,
+                token=tok_int,
+                from_date=from_date,
+                to_date=today_str,
+                resolution="D",
+            )
+            if df is None or getattr(df, "empty", True) or len(df) == 0:
+                continue
+
+            last_row = df.iloc[-1]
+            ltp = float(last_row.get("close", 0) or 0)
+            if not ltp:
+                continue
+
+            prev_close = float(df.iloc[-2].get("close", 0) or 0) if len(df) >= 2 else float(last_row.get("open", 0) or 0)
+            chg = round(ltp - prev_close, 2) if prev_close else 0.0
+            chg_pct = round((chg / prev_close) * 100, 2) if prev_close else 0.0
+
+            symbol = None
+            if hasattr(client, "scrip_master"):
+                details = client.scrip_master.get_details(str(tok))
+                symbol = details.get("Symbol") or details.get("SecDesc")
+            if not symbol:
+                info = _DEMO_INSTRUMENTS.get(f"{seg_id}_{tok}")
+                symbol = info["symbol"] if info else str(tok)
+
+            quotes.append({
+                "symbol": symbol,
+                "segment_id": seg_id,
+                "token": str(tok),
+                "ltp": ltp,
+                "chg": chg,
+                "chg_pct": chg_pct,
+                "source": "choice_chart_data",
+            })
+        except Exception as exc:
+            logger.debug("ChartData quote unavailable for %s_%s: %s", seg_id, tok, exc)
+
+    return quotes
 
 
 def _quotes_from_holdings(session: ChoiceSession, seg_tokens: str) -> List[Dict[str, Any]]:

@@ -292,6 +292,27 @@ def test_paper_touchline_does_not_use_demo_quotes():
         market_gateway.get_multiple_touchline(session, "1_2885")
 
 
+def test_paper_touchline_can_price_from_chart_data():
+    """When touchline REST is dead, Choice ChartData from kkunal SDK provides live candle prices."""
+    session = _connected("tl-chart", SessionMode.PAPER)
+    session.client.market.get_multiple_touchline.side_effect = Exception("touchline down")
+    session.client.portfolio.get_holdings.return_value = {"Status": "Fail", "Reason": "empty"}
+    session.client.portfolio.get_net_position.return_value = {"Status": "Fail", "Reason": "empty"}
+
+    import pandas as pd
+    chart_df = pd.DataFrame([
+        {"timestamp": "2026-09-01T09:15:00", "open": 2500.0, "high": 2510.0, "low": 2495.0, "close": 2505.0, "volume": 1000, "oi": 0},
+        {"timestamp": "2026-09-01T15:30:00", "open": 2505.0, "high": 2520.0, "low": 2500.0, "close": 2515.5, "volume": 2000, "oi": 0},
+    ])
+    session.client.historical.get_historical_data.return_value = chart_df
+
+    result = market_gateway.get_multiple_touchline(session, "1_2885")
+    assert result["status"] == "SUCCESS"
+    assert result["data"][0]["ltp"] == 2515.5
+    assert result["data"][0]["source"] == "choice_chart_data"
+    assert session.market_data_ok is True
+
+
 def test_paper_touchline_can_price_from_holdings():
     session = _connected("tl-holdings", SessionMode.PAPER)
     session.client.market.get_multiple_touchline.side_effect = Exception("no feed")

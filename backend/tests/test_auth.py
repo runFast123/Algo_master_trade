@@ -82,6 +82,24 @@ def test_sandbox_session_reports_its_mode(client, connected):
     assert status.json()["connected"] is True
 
 
+def test_quotes_endpoint_graceful_on_upstream_failure(client, connected, monkeypatch):
+    """When Choice market touchline is down, /quotes returns 200 with partial/empty data instead of 502."""
+    headers, _ = connected("quotes_sandbox")
+    from app.api.v1 import market as market_api
+
+    def mock_fail(session, seg_tokens):
+        from engine.app.choice_gateway.errors import ChoiceUpstreamError
+        raise ChoiceUpstreamError("Choice touchline unavailable", "Index was outside bounds")
+
+    monkeypatch.setattr(market_api.market_gateway, "get_multiple_touchline", mock_fail)
+    response = client.get("/api/v1/market/quotes", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "PARTIAL"
+    assert data["data"] == []
+    assert "Choice touchline unavailable" in data["upstream_error"]
+
+
 def test_disconnect_drops_the_session(client, connected):
     headers, _ = connected("disconnect")
     assert client.post("/api/v1/auth/choice/disconnect", headers=headers).status_code == 200

@@ -296,7 +296,7 @@ def main() -> int:
         help="Hide the console window. Startup errors become invisible, so "
              "keep the console while testing.",
     )
-    parser.add_argument("--app-version", default="1.2.10")
+    parser.add_argument("--app-version", default="1.2.11")
     parser.add_argument(
         "--licence-server", default="",
         help="Licence service URL to bake into this build, e.g. "

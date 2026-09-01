@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, Query
@@ -7,6 +8,9 @@ from engine.app.choice_gateway import market as market_gateway
 from engine.app.choice_gateway import scrip_master
 from engine.app.choice_gateway import sockets_pricefeed
 from engine.app.choice_gateway.client_manager import ChoiceSession
+from engine.app.choice_gateway.errors import ChoiceUpstreamError
+
+logger = logging.getLogger("market_api")
 
 router = APIRouter()
 
@@ -37,7 +41,18 @@ def get_market_quotes(
     session: ChoiceSession = Depends(get_choice_session),
 ) -> Dict[str, Any]:
     """Level 1 quotes. Cached per session for a few seconds, keyed by request."""
-    return market_gateway.get_multiple_touchline(session, seg_tokens)
+    try:
+        return market_gateway.get_multiple_touchline(session, seg_tokens)
+    except ChoiceUpstreamError as exc:
+        logger.info("Market quotes upstream exception: %s | %s", exc.message, exc.details)
+        return {
+            "status": "PARTIAL",
+            "mode": session.mode.value,
+            "is_open": market_gateway.is_indian_market_hours(),
+            "data": [],
+            "cached": False,
+            "upstream_error": f"{exc.message} ({exc.details})" if exc.details else exc.message,
+        }
 
 
 @router.get("/profile")
