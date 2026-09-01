@@ -19,7 +19,7 @@ CHOICE_BASE_URLS = {
 
 class EngineSettings(BaseSettings):
     PROJECT_NAME: str = "Choice FINX Trading Engine Service"
-    VERSION: str = "1.2.8"
+    VERSION: str = "1.2.9"
     API_V1_STR: str = "/api/v1"
 
     # Which Choice environment order flow is routed to. Defaults to UAT so that
@@ -55,11 +55,12 @@ class EngineSettings(BaseSettings):
     CHOICE_OAUTH_AES_KEY: Optional[str] = None
     CHOICE_OAUTH_AES_IV: Optional[str] = None
 
-    # Alternative historical market data provider (e.g. Marketstack) for
-    # backtesting when Choice historical chart data is unavailable.
-    HISTORICAL_DATA_PROVIDER: str = "AUTO"  # "AUTO", "CHOICE", "MARKETSTACK"
-    MARKETSTACK_API_KEY: Optional[str] = None
-    MARKETSTACK_BASE_URL: str = "https://api.marketstack.com"
+    # Historical OHLCV for backtests.
+    #   AUTO     = Choice OpenAPI ChartData first, Yahoo Finance second.
+    #   CHOICE   = Choice OpenAPI only (no Yahoo fallback).
+    #   YFINANCE = Choice first, then Yahoo Finance.
+    # Leftover MARKETSTACK values are treated as AUTO.
+    HISTORICAL_DATA_PROVIDER: str = "AUTO"
 
     class Config:
         env_file = ENV_FILE

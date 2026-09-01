@@ -15,7 +15,6 @@ import pandas as pd
 import numpy as np
 
 from engine.app.config import engine_settings
-from . import marketstack as marketstack_client
 from .client_manager import ChoiceSession, SessionMode
 from .errors import ChoiceNotConnected, ChoiceUpstreamError
 
@@ -147,21 +146,30 @@ def _fetch_yfinance_ohlcv(
         if df is None or df.empty:
             return None
 
-        # yfinance returns multi-index columns in recent versions when passing a single ticker,
-        # or uppercase columns. We need a flat structure: timestamp, open, high, low, close, volume
+        # yfinance returns multi-index columns in recent versions when passing a
+        # single ticker, or uppercase columns. Flatten to timestamp/OHLCV.
         df = df.reset_index()
-        
-        # Flatten multi-level columns if they exist
+
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = [col[0] for col in df.columns]
 
-        df.columns = [str(c).lower() for col in df.columns for c in [col]]
-        
-        # Date or Datetime column -> timestamp
-        time_cols = [c for c in df.columns if c in ("date", "datetime", "timestamp")]
-        if time_cols:
+        df.columns = [str(c).lower() for c in df.columns]
+
+        # Named DatetimeIndex becomes "date"; an unnamed one becomes "index".
+        time_cols = [
+            c for c in df.columns
+            if c in ("date", "datetime", "timestamp", "index")
+        ]
+        if time_cols and "timestamp" not in df.columns:
             df = df.rename(columns={time_cols[0]: "timestamp"})
-            
+        elif "timestamp" not in df.columns:
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df = df.rename(columns={col: "timestamp"})
+                    break
+            else:
+                return None
+
         df["timestamp"] = pd.to_datetime(df["timestamp"]).dt.strftime("%Y-%m-%dT%H:%M:%S")
 
         # Fill missing volume
@@ -207,21 +215,17 @@ def get_historical_ohlcv(
         provenance.update(source="SANDBOX_SYNTHETIC", is_real_market_data=False)
         return df, provenance
 
+    # AUTO / leftover MARKETSTACK: Choice OpenAPI first, Yahoo Finance second.
+    # CHOICE: Choice only. YFINANCE: still tries Choice first, then Yahoo.
     provider = (engine_settings.HISTORICAL_DATA_PROVIDER or "AUTO").upper()
-
-    # 1. Explicit Marketstack provider
     if provider == "MARKETSTACK":
-        df, m_prov = marketstack_client.get_historical_ohlcv(
-            symbol=symbol,
-            timeframe=timeframe,
-            start_date=start_date,
-            end_date=end_date,
+        logger.info(
+            "HISTORICAL_DATA_PROVIDER=MARKETSTACK is no longer used; "
+            "treating as AUTO (Choice then Yahoo Finance)."
         )
-        provenance.update(m_prov)
-        return df, provenance
+        provider = "AUTO"
 
-    # 2. Try Choice OpenAPI first
-    if session.mode is SessionMode.DISCONNECTED and provider != "MARKETSTACK":
+    if session.mode is SessionMode.DISCONNECTED:
         raise ChoiceNotConnected(
             "Not signed in to Choice FINX. Connect your Choice account first."
         )
@@ -245,29 +249,8 @@ def get_historical_ohlcv(
         provenance.update(source="CHOICE_OPENAPI", is_real_market_data=True, bars=len(df))
         return df, provenance
 
-    # 3. Fallback to Marketstack if Choice is unavailable and Marketstack is configured
-    # We create an instance to check configuration because marketstack_client acts
-    # as the module locally, but it exports the MarketstackClient class
-    ms_client = marketstack_client.MarketstackClient()
-    if provider == "AUTO" and ms_client.is_configured:
-        logger.info(
-            "Choice historical data unavailable (%s); falling back to Marketstack for %s",
-            choice_err or "empty/invalid response", symbol,
-        )
-        try:
-            df, m_prov = ms_client.get_historical_ohlcv(
-                symbol=symbol,
-                timeframe=timeframe,
-                start_date=start_date,
-                end_date=end_date,
-            )
-            provenance.update(m_prov)
-            return df, provenance
-        except Exception as ms_exc:
-            logger.warning("Marketstack fallback also failed for %s: %s", symbol, ms_exc)
-
-    # 4. Fallback to yfinance if Choice and Marketstack both fail
-    if provider in ("AUTO", "YFINANCE"):
+    allow_yahoo = provider in ("AUTO", "YFINANCE")
+    if allow_yahoo:
         logger.info("Falling back to yfinance for %s (Choice err: %s)", symbol, choice_err)
         try:
             df = _fetch_yfinance_ohlcv(symbol, timeframe, start_date, end_date, segment_id)

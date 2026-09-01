@@ -204,16 +204,6 @@ def resolve_instrument(
             "token": info["token"],
         }
 
-    # 4. Fallback for alternative providers (e.g. Marketstack) where symbol serves as identifier
-    from engine.app.config import engine_settings
-    from engine.app.choice_gateway.marketstack import marketstack_client
-    if (engine_settings.HISTORICAL_DATA_PROVIDER in ("MARKETSTACK", "AUTO") and marketstack_client.is_configured):
-        return {
-            "symbol": symbol_upper,
-            "segment_id": int(segment_id or 1),
-            "token": symbol_upper,
-        }
-
     raise ChoiceUpstreamError(
         f"Unknown instrument {symbol_upper!r}. Supply an explicit token."
     )

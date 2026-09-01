@@ -52,7 +52,7 @@ def _install_signing_key() -> str:
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Algo Trading Platform Backend"
-    VERSION: str = "1.2.8"
+    VERSION: str = "1.2.9"
     API_V1_STR: str = "/api/v1"
     GITHUB_REPO: str = "runFast123/Algo_master_trade"
 
